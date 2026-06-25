@@ -1,0 +1,243 @@
+@import url('https://fonts.googleapis.com/css2?family=Anek+Bangla:wght@100..800&family=Hind+Siliguri:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@100..900&display=swap');
+@import "tailwindcss";
+
+@font-face {
+  font-family: 'Kalpurush';
+  src: url('https://cdn.jsdelivr.net/npm/bangla-fonts@1.0.0/public/Kalpurush/Kalpurush.ttf') format('truetype'),
+       url('https://cdn.jsdelivr.net/gh/maateen/bangla-fonts@master/public/Kalpurush/Kalpurush.ttf') format('truetype'),
+       url('https://raw.githubusercontent.com/maateen/bangla-fonts/master/public/Kalpurush/Kalpurush.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: "Kalpurush", "Hind Siliguri", "Noto Sans Bengali", "Anek Bangla", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Kalpurush", "Hind Siliguri", "Noto Sans Bengali", "Anek Bangla", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Force dark mode to be class-based if Tailwind 4 defaults to media */
+@variant dark (&:where(.dark, .dark *));
+
+/* Universal Typography Overrides */
+* {
+  font-family: "Kalpurush", "Hind Siliguri", "Noto Sans Bengali", "Anek Bangla", ui-sans-serif, system-ui, sans-serif !important;
+}
+
+code, kbd, pre, samp, .font-mono, .font-mono * {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+}
+
+@layer base {
+  body {
+    @apply bg-[#F4F6FB] font-sans text-slate-800 transition-colors duration-300;
+    -webkit-tap-highlight-color: transparent;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    color: #1E293B;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms;
+  }
+  .dark {
+    color-scheme: light;
+  }
+  .dark body {
+    @apply bg-[#F4F6FB] text-slate-800;
+  }
+  .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
+    color: #1E293B;
+  }
+  
+  /* Make both modes look Premium White with subtle border */
+  .bg-white {
+    @apply bg-white border-slate-200/60;
+    background-color: #FFFFFF !important;
+    border-color: rgba(226, 232, 240, 0.8) !important;
+  }
+  .dark .bg-white {
+    @apply bg-white border-slate-200;
+    background-color: #FFFFFF !important;
+  }
+  .bg-[#F5F5F5], .bg-[#F0F2F5] {
+    background-color: #F4F6FB !important;
+  }
+  .dark .bg-[#F5F5F5] {
+    @apply bg-[#F4F6FB];
+  }
+  
+  .text-[#37474F] {
+    color: #1E293B !important;
+  }
+  .dark .text-[#37474F] {
+    @apply text-slate-800;
+  }
+  .text-gray-900, .text-gray-800 {
+    color: #0F172A !important;
+  }
+  .dark .text-gray-900, .dark .text-gray-800 {
+    @apply text-slate-900;
+  }
+  .text-gray-500, .text-gray-400 {
+    color: #64748B !important;
+  }
+  .dark .text-gray-500, .dark .text-gray-400 {
+    @apply text-slate-500;
+  }
+  .bg-gray-50 {
+    @apply bg-slate-50;
+    background-color: #F8FAFC !important;
+  }
+  .dark .bg-gray-50 {
+    @apply bg-slate-100/70;
+  }
+  .border-gray-50, .border-gray-100, .border-gray-200 {
+    border-color: rgba(226, 232, 240, 0.8) !important;
+  }
+  .dark .border-gray-50, .dark .border-gray-100, .dark .border-gray-200 {
+    @apply border-slate-200;
+  }
+  .shadow-sm {
+    @apply shadow-sm;
+  }
+  input {
+    @apply bg-white border-slate-200 text-slate-800 placeholder-slate-400;
+  }
+  .dark input {
+    @apply bg-white border-slate-200 text-slate-800 placeholder-slate-400;
+  }
+
+  /* --- Global Premium Emerald & Dark Green Theme Color Overrides --- */
+  
+  /* Primary Green #10B981 overrides */
+  .bg-\[\#10B981\] {
+    background-color: #10B981 !important;
+  }
+  .text-\[\#10B981\] {
+    color: #10B981 !important;
+  }
+  .border-\[\#10B981\] {
+    border-color: #10B981 !important;
+  }
+  .bg-\[\#10B981\]\/10 {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+  }
+  .bg-\[\#10B981\]\/20 {
+    background-color: rgba(16, 185, 129, 0.2) !important;
+  }
+  .border-\[\#10B981\]\/20 {
+    border-color: rgba(16, 185, 129, 0.2) !important;
+  }
+  
+  /* Text on Green background should be white/off-white for perfect legibility and premium contrast */
+  .bg-\[\#10B981\] .text-\[\#064E3B\] {
+    color: #FFFFFF !important;
+  }
+  .bg-\[\#10B981\] h1,
+  .bg-\[\#10B981\] h2,
+  .bg-\[\#10B981\] h3,
+  .bg-\[\#10B981\] h4,
+  .bg-\[\#10B981\] h5,
+  .bg-\[\#10B981\] h6 {
+    color: #FFFFFF !important;
+  }
+
+  /* EXCEPT if that text is inside a white component like a Card (.bg-white)! */
+  .bg-white .text-\[\#064E3B\],
+  .bg-white .text-gray-900,
+  .bg-white .text-gray-800,
+  [class*="bg-white"] .text-\[\#064E3B\] {
+    color: #1E293B !important;
+  }
+  .bg-white h1,
+  .bg-white h2,
+  .bg-white h3,
+  .bg-white h4,
+  .bg-white h5,
+  .bg-white h6 {
+    color: #1E293B !important;
+  }
+
+  /* Secondary Dark Green #064E3B overrides */
+  .bg-\[\#064E3B\] {
+    background-color: #064E3B !important;
+  }
+  .text-\[\#064E3B\] {
+    color: #064E3B !important;
+  }
+  .border-\[\#064E3B\] {
+    border-color: #10B981 !important;
+  }
+
+  /* Opacity overrides for #064E3B */
+  .text-\[\#064E3B\]\/70 {
+    color: rgba(6, 78, 59, 0.7) !important;
+  }
+  .text-\[\#064E3B\]\/60 {
+    color: rgba(6, 78, 59, 0.6) !important;
+  }
+  .text-\[\#064E3B\]\/50 {
+    color: rgba(6, 78, 59, 0.5) !important;
+  }
+  .text-\[\#064E3B\]\/40 {
+    color: rgba(6, 78, 59, 0.4) !important;
+  }
+  .bg-\[\#064E3B\]\/40 {
+    background-color: rgba(6, 78, 59, 0.4) !important;
+  }
+  .bg-\[\#064E3B\]\/5 {
+    background-color: rgba(6, 78, 59, 0.05) !important;
+  }
+  .border-\[\#064E3B\]\/20 {
+    border-color: rgba(16, 185, 129, 0.2) !important;
+  }
+  .placeholder-\[\#064E3B\]\/50::placeholder {
+    color: rgba(100, 116, 139, 0.5) !important;
+  }
+
+  /* Support for dark mode variations on white-background nested components */
+  .dark .bg-white .text-\[\#064E3B\],
+  .dark .bg-white.text-\[\#064E3B\],
+  .dark .bg-white h1,
+  .dark .bg-white h2,
+  .dark .bg-white h3,
+  .dark .bg-white h4,
+  .dark .bg-white h5,
+  .dark .bg-white h6,
+  .dark .text-\[\#064E3B\] {
+    color: #1E293B !important;
+  }
+  
+  /* Hover effects */
+  .hover\:bg-\[\#059669\]:hover {
+    background-color: #059669 !important;
+  }
+
+  /* Gradients from #10B981 to #059669 -> Emerald Gradients */
+  .from-\[\#10B981\] {
+    --tw-gradient-from: #10B981 !important;
+    --tw-gradient-to: rgba(16, 185, 129, 0) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  .to-\[\#059669\] {
+    --tw-gradient-to: #059669 !important;
+  }
+  .shadow-\[\#10B981\]\/30 {
+    --tw-shadow-color: rgba(16, 185, 129, 0.3) !important;
+  }
+  .shadow-\[\#064E3B\]\/20 {
+    --tw-shadow-color: rgba(6, 78, 59, 0.2) !important;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

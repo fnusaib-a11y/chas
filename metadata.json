@@ -1,0 +1,8 @@
+{
+  "name": "Cash",
+  "description": "Premium micro-task and rewards platform. Earn rewards by completing missions and shopping.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

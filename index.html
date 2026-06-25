@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CASH</title>
+    <script>
+      (function() {
+        const suppress = function(msg, src) {
+          const m = String(msg || '').toLowerCase();
+          const s = String(src || '').toLowerCase();
+          return (
+            m.includes('script error') ||
+            m.includes('error loading script') ||
+            m.includes('networkerror') ||
+            m.includes('failed to fetch') ||
+            s.includes('startapp') ||
+            s.includes('alwingulla') ||
+            s.includes('monetag') ||
+            !src
+          );
+        };
+
+        window.onerror = function(message, source, lineno, colno, error) {
+          if (suppress(message, source)) {
+            console.warn('Suppressed global window.onerror:', message, 'src:', source);
+            return true;
+          }
+          return false;
+        };
+
+        window.addEventListener('error', function(event) {
+          if (suppress(event.message, event.filename)) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(event) {
+          const reason = event.reason ? String(event.reason.message || event.reason) : '';
+          if (suppress(reason, '')) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+          }
+        });
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

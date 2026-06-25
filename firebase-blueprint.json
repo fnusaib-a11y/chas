@@ -1,0 +1,321 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and balance information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "referralCode": { "type": "string" },
+        "groupName": { "type": "string" },
+        "referredBy": { "type": "string" },
+        "balance": { "type": "number" },
+        "pendingBalance": { "type": "number" },
+        "bonusBalance": { "type": "number" },
+        "totalTasksCompleted": { "type": "number" },
+        "totalReferrals": { "type": "number" },
+        "level": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "streak": { "type": "number" },
+        "darkMode": { "type": "boolean" },
+        "soundEnabled": { "type": "boolean" },
+        "avatar": { "type": "string" }
+      },
+      "required": ["id", "name", "phone", "referralCode", "balance", "level", "createdAt"]
+    },
+    "GroupMessage": {
+      "title": "GroupMessage",
+      "description": "Messages sent within a team/group",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "groupId": { "type": "string", "description": "The ID of the Team Leader" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "readBy": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["groupId", "senderId", "senderName", "text", "createdAt"]
+    },
+    "DirectMessage": {
+      "title": "DirectMessage",
+      "description": "1-on-1 private messages",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "recipientId": { "type": "string" },
+        "text": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["participants", "senderId", "senderName", "recipientId", "text", "createdAt"]
+    },
+    "TypingStatus": {
+      "title": "TypingStatus",
+      "description": "Real-time typing indicator",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "targetId": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "userName", "targetId", "updatedAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "Available tasks for users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string" },
+        "reward": { "type": "number" },
+        "duration": { "type": "number" },
+        "url": { "type": "string" },
+        "adCode": { "type": "string" },
+        "category": { "type": "string" },
+        "isDaily": { "type": "boolean" }
+      },
+      "required": ["id", "title", "type", "reward"]
+    },
+    "TaskLog": {
+      "title": "TaskLog",
+      "description": "Record of task completions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "taskId": { "type": "string" },
+        "completedAt": { "type": "string" },
+        "reward": { "type": "number" },
+        "status": { "type": "string" }
+      }
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial transaction record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "Withdrawal": {
+      "title": "Withdrawal",
+      "description": "Cashing out request",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "method": { "type": "string" },
+        "details": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "processedAt": { "type": "string" }
+      }
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Product order details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "items": { "type": "array" },
+        "totalPrice": { "type": "number" },
+        "address": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "estimatedDeliveryDate": { "type": "string" },
+        "carrier": { "type": "string" },
+        "trackingNumber": { "type": "string" }
+      }
+    },
+    "FAQ": {
+      "title": "FAQ",
+      "description": "Frequently Asked Questions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "question": { "type": "string" },
+        "answer": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "question", "answer"]
+    },
+    "AppSettings": {
+      "title": "AppSettings",
+      "description": "Global application configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "startioAppId": { "type": "string" },
+        "bannerAdUnitId": { "type": "string" },
+        "interstitialAdUnitId": { "type": "string" },
+        "maintenanceMode": { "type": "boolean" },
+        "minWithdrawal": { "type": "number" },
+        "monetagId": { "type": "string" },
+        "monetagBannerZoneId": { "type": "string" },
+        "monetagInterstitialZoneId": { "type": "string" },
+        "monetagInAppZoneId": { "type": "string" }
+      }
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Store product details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "image": { "type": "string" },
+        "stock": { "type": "number" },
+        "isDailyDeal": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "sellerId": { "type": "string" }
+      },
+      "required": ["id", "name", "price", "status"]
+    },
+    "ServiceProvider": {
+      "title": "ServiceProvider",
+      "description": "Local service experts",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "phone": { "type": "string" },
+        "rating": { "type": "number" },
+        "reviewsCount": { "type": "number" },
+        "isVerified": { "type": "boolean" },
+        "basePrice": { "type": "number" },
+        "bio": { "type": "string" },
+        "availability": { "type": "boolean" }
+      }
+    },
+    "ServiceBooking": {
+      "title": "ServiceBooking",
+      "description": "Bookings for local services",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "providerId": { "type": "string" },
+        "providerName": { "type": "string" },
+        "category": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "started", "completed", "cancelled"] },
+        "price": { "type": "number" },
+        "scheduledAt": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "CourierOrder": {
+      "title": "CourierOrder",
+      "description": "Logistics and courier requests",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "recipientName": { "type": "string" },
+        "recipientPhone": { "type": "string" },
+        "pickupAddress": { "type": "string" },
+        "deliveryAddress": { "type": "string" },
+        "weight": { "type": "number" },
+        "price": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "rider_assigned", "picked_up", "delivered", "cancelled"] },
+        "trackingId": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "StudentResource": {
+      "title": "StudentResource",
+      "description": "Study materials and notes",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["Note", "PDF", "Book", "Question"] },
+        "url": { "type": "string" },
+        "previewUrl": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "AIContentRequest": {
+      "title": "AIContentRequest",
+      "description": "Requests for AI-generated content",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": { "type": "string" },
+        "prompt": { "type": "string" },
+        "result": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "AIAsset": {
+      "title": "AIAsset",
+      "description": "AI models and prompts for sale",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["Model", "Prompt", "Art"] },
+        "previewUrl": { "type": "string" },
+        "price": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "sold"] },
+        "createdAt": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "users": { "schema": "User", "description": "User profiles" },
+    "tasks": { "schema": "Task", "description": "Global task list" },
+    "taskLogs": { "schema": "TaskLog", "description": "User task completion logs" },
+    "transactions": { "schema": "Transaction", "description": "Financial history" },
+    "withdrawals": { "schema": "Withdrawal", "description": "Cashout requests" },
+    "orders": { "schema": "Order", "description": "Store orders" },
+    "faqs": { "schema": "FAQ", "description": "Help center questions" },
+    "groupMessages": { "schema": "GroupMessage", "description": "Team chat messages" },
+    "directMessages": { "schema": "DirectMessage", "description": "Private messages" },
+    "typingIndicators": { "schema": "TypingStatus", "description": "Typing indicators" },
+    "settings": { "schema": "AppSettings", "description": "Global app settings" },
+    "products": { "schema": "Product", "description": "Store products" },
+    "serviceProviders": { "schema": "ServiceProvider", "description": "Local experts list" },
+    "serviceBookings": { "schema": "ServiceBooking", "description": "Ecosystem service bookings" },
+    "courierOrders": { "schema": "CourierOrder", "description": "Logistics orders" },
+    "studentResources": { "schema": "StudentResource", "description": "Education marketplace resources" },
+    "aiContentRequests": { "schema": "AIContentRequest", "description": "AI generation history" },
+    "aiAssets": { "schema": "AIAsset", "description": "AI marketplace assets" }
+  }
+}
