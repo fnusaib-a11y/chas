@@ -122,9 +122,9 @@ const AppLayout = ({ children, hideNav, state }: { children: React.ReactNode; hi
       {/* Beautiful Ambient Animated Background Canvas & Blobs */}
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
         <InteractiveBackground isDark={!!isDark} theme={theme} />
-        {/* Soft floating blur circles overlay for depth */}
-        <div className="absolute top-[-5%] left-[-5%] w-[250px] h-[250px] bg-emerald-300/10 dark:bg-emerald-500/5 rounded-full blur-[70px]" />
-        <div className="absolute bottom-[15%] right-[-5%] w-[220px] h-[220px] bg-amber-300/10 dark:bg-amber-500/5 rounded-full blur-[60px]" />
+        {/* Soft floating blur circles overlay for depth - highly optimized & clear */}
+        <div className="absolute top-[-5%] left-[-5%] w-[180px] h-[180px] bg-emerald-300/5 dark:bg-emerald-500/3 rounded-full blur-[40px]" />
+        <div className="absolute bottom-[15%] right-[-5%] w-[150px] h-[150px] bg-amber-300/5 dark:bg-amber-500/3 rounded-full blur-[35px]" />
       </div>
 
       <main className={`flex-1 ${hideNav ? '' : 'pb-24'}`}>

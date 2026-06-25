@@ -351,18 +351,24 @@ export default function InteractiveBackground({ isDark, theme = 'default' }: { i
         }
 
         // Pulse radius slightly over time
-        const pulseRadius = p.radius + Math.sin(p.pulseTime) * 1.5;
+        const pulseRadius = p.radius + Math.sin(p.pulseTime) * 1.2;
 
-        // Draw soft ambient glowing radial gradients for each bubble
-        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, pulseRadius * 2.8);
-        const baseAlpha = p.alpha;
+        // Draw a sharp core particle for pristine clarity
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, pulseRadius * 0.75, 0, Math.PI * 2);
+        ctx.fillStyle = `${p.color}${p.alpha * 0.85})`;
+        ctx.fill();
+
+        // Draw a much smaller, subtle outer glow to avoid fogginess (ghola)
+        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, pulseRadius * 1.5);
+        const baseAlpha = p.alpha * 0.35;
         
         grad.addColorStop(0, `${p.color}${baseAlpha})`);
-        grad.addColorStop(0.3, `${p.color}${baseAlpha * 0.5})`);
+        grad.addColorStop(0.4, `${p.color}${baseAlpha * 0.4})`);
         grad.addColorStop(1, `${p.color}0)`);
 
         ctx.beginPath();
-        ctx.arc(p.x, p.y, pulseRadius * 2.8, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, pulseRadius * 1.5, 0, Math.PI * 2);
         ctx.fillStyle = grad;
         ctx.fill();
       });
@@ -377,9 +383,9 @@ export default function InteractiveBackground({ isDark, theme = 'default' }: { i
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           // Connection limit based on screen height
-          const maxDist = Math.min(width * 0.35, 125);
+          const maxDist = Math.min(width * 0.35, 110);
           if (dist < maxDist) {
-            const lineAlpha = (1 - dist / maxDist) * 0.12;
+            const lineAlpha = (1 - dist / maxDist) * 0.08;
             ctx.beginPath();
             ctx.moveTo(p1.x, p1.y);
             ctx.lineTo(p2.x, p2.y);
@@ -390,7 +396,7 @@ export default function InteractiveBackground({ isDark, theme = 'default' }: { i
             lineGrad.addColorStop(1, `${p2.color}${lineAlpha})`);
             
             ctx.strokeStyle = lineGrad;
-            ctx.lineWidth = 0.8;
+            ctx.lineWidth = 0.6;
             ctx.stroke();
           }
         }

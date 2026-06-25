@@ -336,18 +336,18 @@ export default function AuthScreens({ mode: initialMode, onAuth }: { mode: 'logi
         }
       `}</style>
 
-      {/* Background backup fluid blobs */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-30">
-        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-tr from-[#3b82f6]/20 to-[#8b5cf6]/10 blur-[100px] liquid-blob-1" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[65vw] h-[65vw] rounded-full bg-gradient-to-bl from-[#ec4899]/15 to-[#8b5cf6]/20 blur-[120px] liquid-blob-2" />
+      {/* Background backup fluid blobs (reduced blur and opacity for high contrast clarity) */}
+      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-20">
+        <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-gradient-to-tr from-[#3b82f6]/15 to-[#8b5cf6]/10 blur-[60px] liquid-blob-1" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-gradient-to-bl from-[#ec4899]/10 to-[#8b5cf6]/15 blur-[70px] liquid-blob-2" />
       </div>
 
-      {/* Main Glassmorphic Wrapper Card - Fully Animated on ALL views! */}
+      {/* Main Glassmorphic Wrapper Card - Optimized for maximum text readability and sharpness */}
       <motion.div 
         initial={{ opacity: 0, y: 35, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        className="w-full max-w-4xl bg-[#0d1430]/40 backdrop-blur-[24px] border border-white/10 rounded-[32px] md:rounded-[36px] overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.65)] flex flex-col md:flex-row relative z-10"
+        className="w-full max-w-4xl bg-[#0d1430]/60 backdrop-blur-[12px] border border-white/15 rounded-[32px] md:rounded-[36px] overflow-hidden shadow-[0_24px_80px_rgba(0,0,0,0.7)] flex flex-col md:flex-row relative z-10"
       >
         
         {/* Left Side: Premium 3D Rocket Space-Theme Illustration */}
