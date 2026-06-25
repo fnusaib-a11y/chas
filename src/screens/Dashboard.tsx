@@ -57,6 +57,8 @@ export default function Dashboard({ state }: { state: AppState }) {
 
   const [activeTab, setActiveTab] = React.useState<string>('');
 
+  const enabledTabsIds = enabledTabs.map(t => t.id).join(',');
+
   React.useEffect(() => {
     if (enabledTabs.length > 0) {
       const isStillEnabled = enabledTabs.some(t => t.id === activeTab);
@@ -64,7 +66,7 @@ export default function Dashboard({ state }: { state: AppState }) {
         setActiveTab(enabledTabs[0].id);
       }
     }
-  }, [enabledTabs, activeTab]);
+  }, [enabledTabsIds, activeTab]);
 
   const filteredTasks = React.useMemo(() => {
     const currentTab = enabledTabs.find(t => t.id === activeTab);

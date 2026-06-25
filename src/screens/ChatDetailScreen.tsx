@@ -50,7 +50,7 @@ export default function ChatDetailScreen({ state }: { state: AppState }) {
         setIsAuthorized(false);
       });
     }
-  }, [userId, recipientFromState, currentUser.id, currentUser.isAdmin, currentUser.referredBy]);
+  }, [userId, recipientFromState?.id, recipientFromState?.name, recipientFromState?.avatar, currentUser.id, currentUser.isAdmin, currentUser.referredBy]);
 
   const activeRecipient = recipient || { id: userId || 'unknown', name: 'User', avatar: '' } as User;
   

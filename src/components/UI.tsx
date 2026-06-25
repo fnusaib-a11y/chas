@@ -97,7 +97,7 @@ export function Button({
 }
 
 export function BannerAdSlot({ state }: { state: AppState }) {
-  const containerId = "startio-banner-" + Math.random().toString(36).substr(2, 9);
+  const containerId = useMemo(() => "startio-banner-" + Math.random().toString(36).substr(2, 9), []);
   const settings = state.settings;
 
   useEffect(() => {

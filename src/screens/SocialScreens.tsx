@@ -579,7 +579,7 @@ const Notifications = ({ state }: { state: AppState }) => {
 
    React.useEffect(() => {
      if (notifications.length > 0) {
-       const latestTime = notifications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0].createdAt;
+       const latestTime = [...notifications].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0].createdAt;
        localStorage.setItem('last_read_notif_time', latestTime);
      }
    }, [notifications]);
