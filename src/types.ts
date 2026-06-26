@@ -571,6 +571,14 @@ export interface AIAsset {
   createdAt: string;
 }
 
+export interface PromoBanner {
+  id: string;
+  imageUrl: string;
+  targetUrl?: string;
+  title?: string;
+  createdAt: string;
+}
+
 export interface AppState {
   users: User[];
   currentUser: User | null;
@@ -613,5 +621,6 @@ export interface AppState {
   mcqSets: MCQSet[];
   aiRequests: AIContentRequest[];
   aiAssets: AIAsset[];
+  promoBanners: PromoBanner[];
   settings: AppSettings;
 }

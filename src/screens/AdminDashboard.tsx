@@ -47,7 +47,7 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ state }: AdminDashboardProps) {
   const navigate = useNavigate();
-  const [tab, setTab] = useState<'users' | 'withdrawals' | 'recharges' | 'orders' | 'tasks' | 'products' | 'coupons' | 'notifications' | 'task-review' | 'product-review' | 'settings' | 'faqs' | 'missions' | 'community' | 'deals' | 'service-hub' | 'logistics-hub' | 'education-hub' | 'referrals' | 'kyc'>('withdrawals');
+  const [tab, setTab] = useState<'users' | 'withdrawals' | 'recharges' | 'orders' | 'tasks' | 'products' | 'coupons' | 'notifications' | 'task-review' | 'product-review' | 'settings' | 'faqs' | 'missions' | 'community' | 'deals' | 'service-hub' | 'logistics-hub' | 'education-hub' | 'referrals' | 'kyc' | 'banners'>('withdrawals');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -62,6 +62,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
   const [newDeal, setNewDeal] = useState<Partial<SecretDeal>>({ title: '', description: '', price: 0, originalPrice: 0, stock: 10, image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400' });
   const [newServiceProvider, setNewServiceProvider] = useState<Partial<ServiceProvider>>({ name: '', category: 'plumber', rating: 5, reviewsCount: 0, basePrice: 500, availability: true, isVerified: true, bio: '', location: { address: 'Dhaka' } });
   const [newStudentResource, setNewStudentResource] = useState<Partial<StudentResource>>({ title: '', description: '', price: 0, type: 'Note', category: 'Science', userName: 'Admin' });
+  const [newBanner, setNewBanner] = useState<{ id?: string; imageUrl: string; targetUrl: string; title: string }>({ imageUrl: '', targetUrl: '', title: '' });
   const [targetUser, setTargetUser] = useState<Partial<User>>({ name: '', balance: 0, isAdmin: false });
   const [localSettings, setLocalSettings] = useState(state.settings);
 
@@ -97,6 +98,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
       if (tab === 'users') setTargetUser(editingItem);
       if (tab === 'service-hub') setNewServiceProvider(editingItem);
       if (tab === 'education-hub') setNewStudentResource(editingItem);
+      if (tab === 'banners') setNewBanner(editingItem);
     }
   }, [editingItem, tab]);
 
@@ -111,6 +113,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
     setNewNotif({ title: '', message: '', type: 'info' });
     setNewServiceProvider({ name: '', category: 'plumber', rating: 5, reviewsCount: 0, basePrice: 500, availability: true, isVerified: true, bio: '', location: { address: 'Dhaka' } });
     setNewStudentResource({ title: '', description: '', price: 0, type: 'Note', category: 'Science', userName: 'Admin' });
+    setNewBanner({ imageUrl: '', targetUrl: '', title: '' });
     setShowAddModal(true);
   };
 
@@ -215,6 +218,21 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
     setNewFAQ({ question: '', answer: '', order: 0 });
   };
 
+  const handleAddBanner = async () => {
+    if (!newBanner.imageUrl) return;
+    if (editingItem) {
+      await dbService.updatePromoBanner(editingItem.id, newBanner);
+    } else {
+      await dbService.addPromoBanner({
+        ...newBanner,
+        createdAt: new Date().toISOString()
+      });
+    }
+    setShowAddModal(false);
+    setEditingItem(null);
+    setNewBanner({ imageUrl: '', targetUrl: '', title: '' });
+  };
+
   const handleGenerateImage = async () => {
     if (!newProduct.name) {
       alert('Please enter a product name first');
@@ -290,6 +308,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
           { id: 'logistics-hub', label: 'Logistics Hub', icon: Truck },
           { id: 'education-hub', label: 'Education Hub', icon: BookOpen },
           { id: 'faqs', label: 'Help Desk', icon: HelpCircle },
+          { id: 'banners', label: 'Ad Banners', icon: Layers },
           { id: 'notifications', label: 'Broadcast', icon: Bell },
           { id: 'settings', label: 'Settings', icon: Settings },
         ].map(t => (
@@ -314,8 +333,8 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
       {/* Content */}
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-black text-gray-800 capitalize">{tab}</h2>
-          {(['products', 'tasks', 'coupons', 'notifications', 'faqs', 'missions', 'deals', 'service-hub', 'education-hub'].includes(tab)) && (
+          <h2 className="text-lg font-black text-gray-800 capitalize">{tab === 'banners' ? 'Ad Banners' : tab}</h2>
+          {(['products', 'tasks', 'coupons', 'notifications', 'faqs', 'missions', 'deals', 'service-hub', 'education-hub', 'banners'].includes(tab)) && (
             <Button onClick={handleOpenAdd} className="w-10 h-10 rounded-full flex items-center justify-center p-0">
                <Plus className="w-5 h-5" />
             </Button>
@@ -1700,6 +1719,47 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
              ))}
           </div>
         )}
+
+        {tab === 'banners' && (
+          <div className="space-y-4">
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl text-xs font-bold leading-relaxed mb-2">
+              ব্যানারগুলো হোম পেজে ১৯:৬ এ্যাসপেক্ট রেশিওতে শো করবে। প্রতিটি ব্যানার ৬ সেকেন্ড পর পর স্লাইড হবে। এডমিন প্যানেল থেকে আপনি যেকোনো ব্যানার যোগ করতে, এডিট করতে এবং ডিলিট করতে পারবেন।
+            </div>
+            
+            <div className="space-y-3">
+              {(!state.promoBanners || state.promoBanners.length === 0) ? (
+                <div className="bg-white p-8 rounded-2xl border border-dashed border-gray-200 text-center text-xs text-gray-400">
+                  কোনো ব্যানার নেই। নতুন ব্যানার যোগ করতে ডান পাশের + বাটনে ক্লিক করুন।
+                </div>
+              ) : (
+                state.promoBanners.map(b => (
+                  <div key={b.id} className="bg-white p-4 rounded-2xl border border-gray-100 flex items-center gap-4 justify-between shadow-sm">
+                    <img 
+                      src={b.imageUrl} 
+                      alt={b.title || 'Banner'} 
+                      className="w-20 aspect-[19/6] object-cover rounded-xl bg-gray-50 border border-gray-100"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-black text-gray-900 truncate">{b.title || 'Unnamed Banner'}</div>
+                      {b.targetUrl && (
+                        <div className="text-[10px] font-bold text-gray-400 truncate mt-0.5">Target: {b.targetUrl}</div>
+                      )}
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <button onClick={() => { setEditingItem(b); setShowAddModal(true); }} className="p-2 text-blue-300 hover:bg-blue-50 hover:text-blue-500 rounded-xl transition-colors">
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => dbService.deletePromoBanner(b.id)} className="p-2 text-red-300 hover:bg-red-50 hover:text-red-500 rounded-xl transition-colors">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add Modal */}
@@ -2067,6 +2127,32 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                   <Input label="Answer" value={newFAQ.answer} onChange={(val: string) => setNewFAQ({...newFAQ, answer: val})} />
                   <Input label="Sort Order" type="number" value={newFAQ.order} onChange={(val: string) => setNewFAQ({...newFAQ, order: Number(val)})} />
                   <Button onClick={handleAddFAQ} className="w-full h-14 rounded-2xl">Create FAQ</Button>
+                </div>
+              )}
+
+              {tab === 'banners' && (
+                <div className="space-y-4">
+                  <Input 
+                    label="Banner Title (ঐচ্ছিক)" 
+                    placeholder="যেমন: স্পেশাল বোনাস টাস্ক!" 
+                    value={newBanner.title || ''} 
+                    onChange={(val: string) => setNewBanner({...newBanner, title: val})} 
+                  />
+                  <Input 
+                    label="Banner Image URL" 
+                    placeholder="https://images.unsplash.com/..." 
+                    value={newBanner.imageUrl || ''} 
+                    onChange={(val: string) => setNewBanner({...newBanner, imageUrl: val})} 
+                  />
+                  <Input 
+                    label="Target Action URL (ঐচ্ছিক)" 
+                    placeholder="যেমন: /tasks বা external link" 
+                    value={newBanner.targetUrl || ''} 
+                    onChange={(val: string) => setNewBanner({...newBanner, targetUrl: val})} 
+                  />
+                  <Button onClick={handleAddBanner} className="w-full h-14 rounded-2xl">
+                    {editingItem ? 'Update Banner' : 'Create Banner'}
+                  </Button>
                 </div>
               )}
 

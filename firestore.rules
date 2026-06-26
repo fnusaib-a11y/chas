@@ -33,6 +33,11 @@ service cloud.firestore {
     }
 
     // Entity validations
+    function isValidPromoBanner(data) {
+      return data.imageUrl is string && data.imageUrl.size() <= 2048
+          && data.createdAt is string;
+    }
+
     function isValidUser(data) {
       return data.id is string && data.id.size() <= 128
           && data.name is string && data.name.size() <= 100
@@ -352,6 +357,11 @@ service cloud.firestore {
     match /dailyChallenges/{challengeId} {
       allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       allow write: if isSignedIn() && (incoming().userId == request.auth.uid || isAdmin());
+    }
+
+    match /promoBanners/{bannerId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() && isValidPromoBanner(incoming());
     }
   }
 }

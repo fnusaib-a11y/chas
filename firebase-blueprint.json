@@ -296,6 +296,19 @@
         "status": { "type": "string", "enum": ["active", "sold"] },
         "createdAt": { "type": "string" }
       }
+    },
+    "PromoBanner": {
+      "title": "PromoBanner",
+      "description": "Promotional banner slide shown on home/dashboard screens",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "targetUrl": { "type": "string" },
+        "title": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["imageUrl", "createdAt"]
     }
   },
   "firestore": {
@@ -316,6 +329,7 @@
     "courierOrders": { "schema": "CourierOrder", "description": "Logistics orders" },
     "studentResources": { "schema": "StudentResource", "description": "Education marketplace resources" },
     "aiContentRequests": { "schema": "AIContentRequest", "description": "AI generation history" },
-    "aiAssets": { "schema": "AIAsset", "description": "AI marketplace assets" }
+    "aiAssets": { "schema": "AIAsset", "description": "AI marketplace assets" },
+    "promoBanners": { "schema": "PromoBanner", "description": "Promotional sliding banners shown on dashboard" }
   }
 }

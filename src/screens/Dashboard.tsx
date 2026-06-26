@@ -12,6 +12,7 @@ import { AppState, UserLevel, AppSettings } from '../types';
 import { dbService } from '../dbService';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import LootDropSystem from '../components/LootDropSystem';
+import { PromoBannerSlider } from '../components/PromoBannerSlider';
 
 const levelInfo = {
   [UserLevel.BEGINNER]: { name: 'Beginner', color: '#B0BEC5', tasksNeeded: 0, referralsNeeded: 0, rewards: '1x Earning' },
@@ -233,6 +234,11 @@ export default function Dashboard({ state }: { state: AppState }) {
       </div>
 
       <div className="p-6 pt-20 space-y-8">
+        {/* Sliding Ad Banners (19:6, pause-on-hold) */}
+        {state.promoBanners && state.promoBanners.length > 0 && (
+          <PromoBannerSlider banners={state.promoBanners} />
+        )}
+
         {/* Streak Check-In Card */}
         <div className="bg-white border border-slate-100 p-5 rounded-[32px] shadow-sm flex items-center justify-between relative overflow-hidden">
           <div className="space-y-2 max-w-[70%] z-10">

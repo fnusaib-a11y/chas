@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { AppState, User, Task, Product, Order, Transaction, Withdrawal, TaskLog, UserLevel, TaskType, OrderStatus, Coupon, GlobalNotification, AppSettings, FAQ, Post, Mission, SecretDeal, DailyMissionProgress, ScratchCard, LootDrop, SellerShop, FollowRelation, UserVirtualAsset, LuckyNumber, SkillTask, DailyChallengeStatus, IQGame, SocialStory, SocialNotification, LiveStream, ServiceProvider, ServiceBooking, CourierOrder, StudentResource, MCQSet, AIContentRequest, AIAsset, CoinTab } from './types';
+import { AppState, User, Task, Product, Order, Transaction, Withdrawal, TaskLog, UserLevel, TaskType, OrderStatus, Coupon, GlobalNotification, AppSettings, FAQ, Post, Mission, SecretDeal, DailyMissionProgress, ScratchCard, LootDrop, SellerShop, FollowRelation, UserVirtualAsset, LuckyNumber, SkillTask, DailyChallengeStatus, IQGame, SocialStory, SocialNotification, LiveStream, ServiceProvider, ServiceBooking, CourierOrder, StudentResource, MCQSet, AIContentRequest, AIAsset, CoinTab, PromoBanner } from './types';
 import { db, auth, storage } from './firebase';
 import { 
   signInAnonymously
@@ -105,6 +105,23 @@ const INITIAL_NOTIFICATIONS: GlobalNotification[] = [
   { id: 'welcome', title: 'CASH তে আপনাকে স্বাগতম!', message: 'CASH অ্যাপে যোগ দেওয়ার জন্য আপনাকে ধন্যবাদ। প্রতিদিন কাজ সম্পন্ন করুন এবং আকর্ষণীয় পুরষ্কার জিতুন!', type: 'info', createdAt: new Date().toISOString() }
 ];
 
+const INITIAL_BANNERS: PromoBanner[] = [
+  {
+    id: 'banner_1',
+    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop',
+    title: 'স্পেশাল বোনাস টাস্ক!',
+    targetUrl: '/tasks',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'banner_2',
+    imageUrl: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=1200&auto=format&fit=crop',
+    title: 'বন্ধুদের রেফার করুন, ২০% কমিশন পান!',
+    targetUrl: '/profile',
+    createdAt: new Date().toISOString()
+  }
+];
+
 export const dbService = {
   // Real-time State
   subscribeToState(onUpdate: (state: AppState) => void) {
@@ -193,6 +210,7 @@ export const dbService = {
       mcqSets: [],
       aiRequests: [],
       aiAssets: [],
+      promoBanners: [],
       settings,
     };
 
@@ -301,6 +319,16 @@ export const dbService = {
     unsubs.push(onSnapshot(collection(db, 'aiAssets'), (aaSnap) => {
       updateState({ aiAssets: aaSnap.docs.map(d => ({ id: d.id, ...d.data() })) as AIAsset[] });
     }));
+
+    unsubs.push(onSnapshot(collection(db, 'promoBanners'), (pbSnap) => {
+      const bannersList = pbSnap.docs.map(d => ({ id: d.id, ...d.data() })) as PromoBanner[];
+      if (bannersList.length === 0) {
+        for (const b of INITIAL_BANNERS) {
+          setDoc(doc(db, 'promoBanners', b.id), b).catch(() => {});
+        }
+      }
+      updateState({ promoBanners: bannersList.length > 0 ? bannersList : INITIAL_BANNERS });
+    }, (err) => handleFirestoreError(err, OperationType.GET, 'promoBanners')));
 
     // User-Specific Data
     const setupUserListeners = (uid: string) => {
@@ -1105,6 +1133,19 @@ export const dbService = {
 
   async deleteFAQ(faqId: string) {
     await deleteDoc(doc(db, 'faqs', faqId));
+  },
+
+  // Promo Banners
+  async addPromoBanner(banner: any) {
+    await addDoc(collection(db, 'promoBanners'), banner);
+  },
+
+  async updatePromoBanner(bannerId: string, updates: any) {
+    await updateDoc(doc(db, 'promoBanners', bannerId), updates);
+  },
+
+  async deletePromoBanner(bannerId: string) {
+    await deleteDoc(doc(db, 'promoBanners', bannerId));
   },
 
   // Shop
