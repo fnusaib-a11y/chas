@@ -221,6 +221,18 @@ const MainProfile = ({ state, onLogout }: { state: AppState; onLogout: () => voi
       >
         <LogOut size={20} /> Logout Account
       </Button>
+
+      <div className="text-center py-6">
+        <a 
+          href="https://www.facebook.com/profile.php?id=61591274904648" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex flex-col items-center gap-0.5 group hover:opacity-80 transition-opacity"
+        >
+          <span className="text-[9px] font-black tracking-widest text-gray-400 uppercase">DEVELOPER</span>
+          <span className="text-[11px] font-black text-[#FFC107] uppercase tracking-wider group-hover:underline">Pipilika Lab's</span>
+        </a>
+      </div>
     </div>
     </div>
   );
@@ -343,8 +355,17 @@ const SettingsScreen = ({ state, onUpdate }: { state: AppState, onUpdate: () => 
             </div>
          </div>
 
-         <div className="text-center opacity-30 mt-auto">
-            <p className="text-[10px] font-black uppercase">CASH v1.0.4-PRO</p>
+         <div className="text-center mt-auto flex flex-col items-center pb-4 z-10">
+            <p className="text-[10px] font-black uppercase mb-1">CASH v1.0.4-PRO</p>
+            <a 
+              href="https://www.facebook.com/profile.php?id=61591274904648" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="inline-flex flex-col items-center gap-0.5 group hover:opacity-80 transition-opacity"
+            >
+              <span className="text-[8px] font-black tracking-widest text-gray-400/50 uppercase">DEVELOPER</span>
+              <span className="text-[10px] font-black text-[#FFC107] uppercase tracking-wider group-hover:underline">Pipilika Lab's</span>
+            </a>
          </div>
       </div>
     </div>
