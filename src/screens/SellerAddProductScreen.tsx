@@ -9,6 +9,7 @@ import { ArrowLeft, Package, DollarSign, Image as ImageIcon, Plus } from 'lucide
 import { Card, Button, Input } from '../components/UI';
 import { AppState } from '../types';
 import { dbService } from '../dbService';
+import { ImagePicker } from '../components/ImagePicker';
 
 export default function SellerAddProductScreen({ state }: { state: AppState }) {
   const navigate = useNavigate();
@@ -88,20 +89,13 @@ export default function SellerAddProductScreen({ state }: { state: AppState }) {
                 onChange={setPrice}
               />
 
-              <Input 
-                label="Image URL" 
-                placeholder="Paste product image link" 
-                icon={ImageIcon}
+              <ImagePicker 
+                label="Product Image" 
                 value={imageUrl}
                 onChange={setImageUrl}
+                folder="products"
               />
-              
-              {imageUrl && (
-                <div className="aspect-square w-32 rounded-3xl overflow-hidden border-2 border-gray-100 mx-auto">
-                   <img src={imageUrl} className="w-full h-full object-cover" onError={(e) => (e.currentTarget.src = 'https://via.placeholder.com/150')} />
-                </div>
-              )}
-           </div>
+            </div>
 
            <Button 
              onClick={handleAddProduct}

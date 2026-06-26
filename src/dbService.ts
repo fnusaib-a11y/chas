@@ -122,6 +122,50 @@ const INITIAL_BANNERS: PromoBanner[] = [
   }
 ];
 
+const fileToBase64AndCompress = (file: File, maxWidth = 512, maxHeight = 512): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const base64Str = reader.result as string;
+      const img = new Image();
+      img.src = base64Str;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(base64Str);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        // Compressed JPEG to be extremely space-efficient
+        resolve(canvas.toDataURL('image/jpeg', 0.65));
+      };
+      img.onerror = () => {
+        resolve(base64Str);
+      };
+    };
+    reader.onerror = (error) => reject(error);
+  });
+};
+
 export const dbService = {
   // Real-time State
   subscribeToState(onUpdate: (state: AppState) => void) {
@@ -821,12 +865,54 @@ export const dbService = {
     const userId = localStorage.getItem('current_user_id');
     if (!userId) throw new Error('Not logged in');
     
-    const storageRef = ref(storage, `avatars/${userId}`);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-    
-    await this.updateCurrentUser({ avatar: url });
-    return url;
+    // 1. Client-side compression to super lightweight JPEG (max 512x512)
+    const compressedBase64 = await fileToBase64AndCompress(file, 512, 512);
+
+    // 2. Try Firebase Storage with a fast 1500ms timeout
+    try {
+      const storageRef = ref(storage, `avatars/${userId}`);
+      const uploadPromise = uploadBytes(storageRef, file).then(async () => {
+        return await getDownloadURL(storageRef);
+      });
+
+      const timeoutPromise = new Promise<string>((_, reject) => 
+        setTimeout(() => reject(new Error('timeout')), 1500)
+      );
+
+      const url = await Promise.race([uploadPromise, timeoutPromise]);
+      await this.updateCurrentUser({ avatar: url });
+      return url;
+    } catch (err) {
+      console.warn('Firebase Storage upload failed or timed out. Falling back to compressed Base64.', err);
+      // Fallback: save compressed Base64 directly
+      await this.updateCurrentUser({ avatar: compressedBase64 });
+      return compressedBase64;
+    }
+  },
+
+  async uploadImage(file: File, folder: string = 'general'): Promise<string> {
+    // 1. Client-side compression to super lightweight JPEG (max 512x512)
+    const compressedBase64 = await fileToBase64AndCompress(file, 512, 512);
+
+    // 2. Try Firebase Storage with a fast 1500ms timeout
+    try {
+      const filename = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+      const storageRef = ref(storage, `${folder}/${filename}`);
+      const uploadPromise = uploadBytes(storageRef, file).then(async () => {
+        return await getDownloadURL(storageRef);
+      });
+
+      const timeoutPromise = new Promise<string>((_, reject) => 
+        setTimeout(() => reject(new Error('timeout')), 1500)
+      );
+
+      const url = await Promise.race([uploadPromise, timeoutPromise]);
+      return url;
+    } catch (err) {
+      console.warn('Firebase Storage upload failed or timed out. Falling back to compressed Base64.', err);
+      // Fallback: return compressed Base64 directly
+      return compressedBase64;
+    }
   },
 
   // Tasks

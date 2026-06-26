@@ -5,16 +5,28 @@
 
 import React, { useEffect, useRef } from 'react';
 
-interface Particle {
+interface Ant {
   x: number;
   y: number;
-  vx: number;
-  vy: number;
-  radius: number;
+  angle: number;
+  targetAngle: number;
+  speed: number;
+  size: number;
   color: string;
-  alpha: number;
-  pulseSpeed: number;
-  pulseTime: number;
+  legsPhase: number;
+  legsSpeed: number;
+  state: 'wandering' | 'toFood' | 'carryingFood';
+  hasCrumb: boolean;
+  crumbColor?: string;
+  turnTimer: number;
+}
+
+interface FoodDrop {
+  x: number;
+  y: number;
+  radius: number;
+  crumbsLeft: number;
+  color: string;
 }
 
 interface Spark {
@@ -44,11 +56,11 @@ export default function InteractiveBackground({ isDark, theme = 'default' }: { i
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const requestRef = useRef<number | null>(null);
 
-  // Keep interaction states inside refs to avoid re-running the heavy canvas loop setup
-  const mouseRef = useRef({ x: -1000, y: -1000, targetX: -1000, targetY: -1000, active: false });
+  const mouseRef = useRef({ x: -1000, y: -1000, active: false });
   const sparksRef = useRef<Spark[]>([]);
   const ripplesRef = useRef<Ripple[]>([]);
-  const particlesRef = useRef<Particle[]>([]);
+  const antsRef = useRef<Ant[]>([]);
+  const foodsRef = useRef<FoodDrop[]>([]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -59,11 +71,8 @@ export default function InteractiveBackground({ isDark, theme = 'default' }: { i
 
     let width = 0;
     let height = 0;
-
-    // Device Pixel Ratio for Retina displays
     const dpr = window.devicePixelRatio || 1;
 
-    // Set canvas sizes based on container size
     const resizeCanvas = () => {
       const container = containerRef.current;
       if (!container || !canvas) return;
@@ -79,70 +88,60 @@ export default function InteractiveBackground({ isDark, theme = 'default' }: { i
 
       ctx.scale(dpr, dpr);
 
-      // Re-initialize particles when resized to fit screen
-      initParticles();
+      initAnts();
     };
 
-    // Color helpers based on theme
+    // Beautiful Glowing Theme Colors
     const getThemeColors = () => {
       if (theme === 'gaming') {
-        return [
-          'rgba(16, 185, 129, ', // emerald
-          'rgba(5, 150, 105, ',  // dark emerald
-          'rgba(52, 211, 153, ', // light emerald
-          'rgba(139, 92, 246, '  // purple
-        ];
+        return {
+          ant: isDark ? 'rgba(16, 185, 129, ' : 'rgba(5, 150, 105, ', // emerald
+          food: 'rgba(139, 92, 246, ', // purple
+          accent: 'rgba(52, 211, 153, ' // light emerald
+        };
       }
       if (theme === 'shopping') {
-        return [
-          'rgba(249, 115, 22, ', // orange
-          'rgba(245, 158, 11, ', // amber
-          'rgba(16, 185, 129, ', // emerald
-          'rgba(14, 165, 233, '  // sky
-        ];
+        return {
+          ant: 'rgba(249, 115, 22, ', // orange
+          food: 'rgba(16, 185, 129, ', // emerald
+          accent: 'rgba(245, 158, 11, ' // amber
+        };
       }
-      // Default & dark theme (Cash / Finance theme)
-      if (isDark) {
-        return [
-          'rgba(52, 211, 153, ', // emerald-400
-          'rgba(251, 191, 36, ', // amber-400
-          'rgba(59, 130, 246, ', // blue-500
-          'rgba(167, 139, 250, ' // purple-400
-        ];
-      } else {
-        return [
-          'rgba(16, 185, 129, ', // emerald-500
-          'rgba(217, 119, 6, ',  // amber-600
-          'rgba(37, 99, 235, ',  // blue-600
-          'rgba(124, 58, 237, '  // violet-600
-        ];
-      }
+      // Default (Cash / Finance theme)
+      return {
+        ant: isDark ? 'rgba(251, 191, 36, ' : 'rgba(180, 83, 9, ', // gold/amber
+        food: 'rgba(52, 211, 153, ', // emerald/green
+        accent: 'rgba(59, 130, 246, ' // blue
+      };
     };
 
-    // Initialize the background floating particles
-    const initParticles = () => {
+    // Initialize the crawling ants
+    const initAnts = () => {
       const colors = getThemeColors();
-      const numParticles = Math.min(22, Math.floor((width * height) / 18000) + 10);
-      const list: Particle[] = [];
+      const numAnts = Math.min(25, Math.floor((width * height) / 16000) + 12);
+      const list: Ant[] = [];
 
-      for (let i = 0; i < numParticles; i++) {
-        const radius = Math.random() * 5 + 3;
+      for (let i = 0; i < numAnts; i++) {
+        const size = Math.random() * 2 + 3.5; // ant size multiplier
+        const angle = Math.random() * Math.PI * 2;
         list.push({
           x: Math.random() * width,
           y: Math.random() * height,
-          vx: (Math.random() - 0.5) * 0.35,
-          vy: (Math.random() - 0.5) * 0.35,
-          radius,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          alpha: Math.random() * 0.4 + 0.15,
-          pulseSpeed: Math.random() * 0.02 + 0.01,
-          pulseTime: Math.random() * Math.PI * 2
+          angle,
+          targetAngle: angle,
+          speed: Math.random() * 0.4 + 0.6,
+          size,
+          color: colors.ant,
+          legsPhase: Math.random() * Math.PI * 2,
+          legsSpeed: Math.random() * 0.15 + 0.2,
+          state: 'wandering',
+          hasCrumb: false,
+          turnTimer: Math.floor(Math.random() * 50) + 30
         });
       }
-      particlesRef.current = list;
+      antsRef.current = list;
     };
 
-    // Create a resize observer to watch container size
     const resizeObserver = new ResizeObserver(() => {
       resizeCanvas();
     });
@@ -151,56 +150,30 @@ export default function InteractiveBackground({ isDark, theme = 'default' }: { i
       resizeObserver.observe(containerRef.current);
     }
 
-    // Trigger initial resize
     resizeCanvas();
 
-    // Trigger explosive sparks at a coordinate
+    // Spawn sparks (sugar crystals flying around)
     const spawnSparks = (x: number, y: number, colorPrefix: string) => {
       const sparks = sparksRef.current;
-      const count = Math.floor(Math.random() * 8) + 8;
+      const count = Math.floor(Math.random() * 6) + 6;
       for (let i = 0; i < count; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const speed = Math.random() * 2.5 + 0.8;
+        const speed = Math.random() * 1.8 + 0.6;
         sparks.push({
           x,
           y,
           vx: Math.cos(angle) * speed,
           vy: Math.sin(angle) * speed,
-          radius: Math.random() * 2 + 1,
+          radius: Math.random() * 1.5 + 0.8,
           color: colorPrefix,
           alpha: 1.0,
           life: 0,
-          maxLife: Math.floor(Math.random() * 30) + 20
+          maxLife: Math.floor(Math.random() * 25) + 15
         });
       }
     };
 
-    // Mouse & Touch events handlers
-    const handlePointerMove = (e: MouseEvent | TouchEvent) => {
-      let clientX = 0;
-      let clientY = 0;
-
-      if ('touches' in e) {
-        if (e.touches.length > 0) {
-          clientX = e.touches[0].clientX;
-          clientY = e.touches[0].clientY;
-        } else {
-          return;
-        }
-      } else {
-        clientX = e.clientX;
-        clientY = e.clientY;
-      }
-
-      const rect = canvas.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const y = clientY - rect.top;
-
-      mouseRef.current.targetX = x;
-      mouseRef.current.targetY = y;
-      mouseRef.current.active = true;
-    };
-
+    // Click to drop sweet food / sugar drops
     const handlePointerDown = (e: MouseEvent | TouchEvent) => {
       let clientX = 0;
       let clientY = 0;
@@ -222,71 +195,138 @@ export default function InteractiveBackground({ isDark, theme = 'default' }: { i
       const y = clientY - rect.top;
 
       const colors = getThemeColors();
-      const randColor = colors[Math.floor(Math.random() * colors.length)];
 
-      // Spawn Ripple
+      // Add a food drop (sugar crystal)
+      foodsRef.current.push({
+        x,
+        y,
+        radius: Math.random() * 4 + 6,
+        crumbsLeft: Math.floor(Math.random() * 8) + 12,
+        color: colors.food
+      });
+
+      // Spawn beautiful ripple
       ripplesRef.current.push({
         x,
         y,
         radius: 2,
-        maxRadius: Math.random() * 60 + 50,
-        alpha: 0.85,
-        speed: 2.2,
-        color: randColor
+        maxRadius: 40,
+        alpha: 0.6,
+        speed: 1.5,
+        color: colors.food
       });
 
-      // Spawn Sparks
-      spawnSparks(x, y, randColor);
+      // Spawn sparkling food crumbs
+      spawnSparks(x, y, colors.food);
     };
 
-    const handlePointerLeave = () => {
-      mouseRef.current.active = false;
-      mouseRef.current.targetX = -1000;
-      mouseRef.current.targetY = -1000;
-    };
-
-    // Add listeners to parent container to capture movements
     const container = containerRef.current;
     if (container) {
-      container.addEventListener('mousemove', handlePointerMove);
-      container.addEventListener('touchstart', handlePointerMove);
-      container.addEventListener('touchmove', handlePointerMove);
       container.addEventListener('mousedown', handlePointerDown);
-      container.addEventListener('touchend', handlePointerLeave);
-      container.addEventListener('mouseleave', handlePointerLeave);
+      container.addEventListener('touchstart', handlePointerDown);
     }
 
-    // MAIN ANIMATION LOOP
+    // DRAW ANT HELPERS
+    const drawAnt = (ant: Ant) => {
+      ctx.save();
+      ctx.translate(ant.x, ant.y);
+      ctx.rotate(ant.angle);
+
+      const s = ant.size;
+      const baseAlpha = isDark ? 0.45 : 0.6;
+      const col = `${ant.color}${baseAlpha})`;
+
+      // 1. Draw 6 wiggling legs extending from thorax
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 0.8;
+      
+      const wiggle = Math.sin(ant.legsPhase) * 0.35;
+      
+      // Left legs
+      ctx.beginPath();
+      // Front leg
+      ctx.moveTo(0, 0);
+      ctx.lineTo(s * 0.5, -s * 0.9 - wiggle);
+      ctx.lineTo(s * 1.0, -s * 1.2 - wiggle);
+      // Middle leg
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, -s * 0.8 + wiggle);
+      ctx.lineTo(-s * 0.3, -s * 1.1 + wiggle);
+      // Back leg
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-s * 0.5, -s * 0.9 - wiggle);
+      ctx.lineTo(-s * 1.1, -s * 1.3 - wiggle);
+
+      // Right legs
+      // Front leg
+      ctx.moveTo(0, 0);
+      ctx.lineTo(s * 0.5, s * 0.9 + wiggle);
+      ctx.lineTo(s * 1.0, s * 1.2 + wiggle);
+      // Middle leg
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, s * 0.8 - wiggle);
+      ctx.lineTo(-s * 0.3, s * 1.1 - wiggle);
+      // Back leg
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-s * 0.5, s * 0.9 + wiggle);
+      ctx.lineTo(-s * 1.1, s * 1.3 + wiggle);
+      ctx.stroke();
+
+      // 2. Draw antennae on head
+      ctx.beginPath();
+      ctx.moveTo(s * 1.1, -s * 0.2);
+      ctx.quadraticCurveTo(s * 1.6, -s * 0.5, s * 1.8, -s * 0.3);
+      ctx.moveTo(s * 1.1, s * 0.2);
+      ctx.quadraticCurveTo(s * 1.6, s * 0.5, s * 1.8, s * 0.3);
+      ctx.stroke();
+
+      // 3. Draw abdomen (Back body oval)
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.ellipse(-s * 0.9, 0, s * 0.9, s * 0.55, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 4. Draw thorax (Middle body circle)
+      ctx.beginPath();
+      ctx.arc(0, 0, s * 0.45, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 5. Draw head (Front body circle)
+      ctx.beginPath();
+      ctx.arc(s * 0.8, 0, s * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 6. Draw carried glowing sugar crumb if ant has one
+      if (ant.hasCrumb && ant.crumbColor) {
+        ctx.fillStyle = `${ant.crumbColor}0.95)`;
+        ctx.shadowColor = ant.crumbColor + '1.0)';
+        ctx.shadowBlur = 4;
+        ctx.beginPath();
+        ctx.arc(s * 1.3, 0, s * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0; // reset
+      }
+
+      ctx.restore();
+    };
+
+    // MAIN ANIMATION FRAME LOOP
     const animate = () => {
       if (!ctx || !canvas) return;
 
-      // Clear with solid transparent color to prevent trace lines or preserve faint trails depending on background
+      // Clean background
       ctx.clearRect(0, 0, width, height);
 
-      const particles = particlesRef.current;
       const sparks = sparksRef.current;
       const ripples = ripplesRef.current;
-      const mouse = mouseRef.current;
+      const ants = antsRef.current;
+      const foods = foodsRef.current;
 
-      // Ease mouse coordinates for smooth lag-trailing effect
-      if (mouse.active) {
-        if (mouse.x === -1000) {
-          mouse.x = mouse.targetX;
-          mouse.y = mouse.targetY;
-        } else {
-          mouse.x += (mouse.targetX - mouse.x) * 0.12;
-          mouse.y += (mouse.targetY - mouse.y) * 0.12;
-        }
-      } else {
-        mouse.x = -1000;
-        mouse.y = -1000;
-      }
-
-      // Update & Draw ripples
+      // Draw & Update Ripples (Sugar drop ripple effects)
       for (let i = ripples.length - 1; i >= 0; i--) {
         const r = ripples[i];
         r.radius += r.speed;
-        r.alpha = Math.max(0, 0.85 * (1 - r.radius / r.maxRadius));
+        r.alpha = Math.max(0, 0.6 * (1 - r.radius / r.maxRadius));
 
         if (r.alpha <= 0 || r.radius >= r.maxRadius) {
           ripples.splice(i, 1);
@@ -296,22 +336,16 @@ export default function InteractiveBackground({ isDark, theme = 'default' }: { i
         ctx.beginPath();
         ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
         ctx.strokeStyle = `${r.color}${r.alpha})`;
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 1;
         ctx.stroke();
-
-        // Subtly filled inner glow
-        ctx.beginPath();
-        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `${r.color}${r.alpha * 0.08})`;
-        ctx.fill();
       }
 
-      // Update & Draw sparks
+      // Draw & Update Sparks (Glowing sugar crystals)
       for (let i = sparks.length - 1; i >= 0; i--) {
         const s = sparks[i];
         s.x += s.vx;
         s.y += s.vy;
-        s.vy += 0.04; // gravity drift
+        s.vy += 0.02; // soft gravity drift
         s.life++;
         s.alpha = Math.max(0, 1 - s.life / s.maxLife);
 
@@ -322,105 +356,150 @@ export default function InteractiveBackground({ isDark, theme = 'default' }: { i
 
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `${s.color}${s.alpha * 0.95})`;
+        ctx.fillStyle = `${s.color}${s.alpha * 0.8})`;
         ctx.fill();
       }
 
-      // Update & Draw Main Particles
-      particles.forEach((p) => {
-        p.x += p.vx;
-        p.y += p.vy;
-        p.pulseTime += p.pulseSpeed;
-
-        // Bounce off bounds gracefully
-        if (p.x < -10) p.x = width + 10;
-        if (p.x > width + 10) p.x = -10;
-        if (p.y < -10) p.y = height + 10;
-        if (p.y > height + 10) p.y = -10;
-
-        // Attract toward mouse if mouse is nearby
-        if (mouse.active) {
-          const dx = mouse.x - p.x;
-          const dy = mouse.y - p.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 130) {
-            const force = (130 - dist) / 130;
-            p.x += (dx / dist) * force * 0.6;
-            p.y += (dy / dist) * force * 0.6;
-          }
+      // Draw & Update Foods (Sweet drops)
+      for (let i = foods.length - 1; i >= 0; i--) {
+        const f = foods[i];
+        if (f.crumbsLeft <= 0) {
+          foods.splice(i, 1);
+          continue;
         }
 
-        // Pulse radius slightly over time
-        const pulseRadius = p.radius + Math.sin(p.pulseTime) * 1.2;
-
-        // Draw a sharp core particle for pristine clarity
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, pulseRadius * 0.75, 0, Math.PI * 2);
-        ctx.fillStyle = `${p.color}${p.alpha * 0.85})`;
-        ctx.fill();
-
-        // Draw a much smaller, subtle outer glow to avoid fogginess (ghola)
-        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, pulseRadius * 1.5);
-        const baseAlpha = p.alpha * 0.35;
+        // Draw sweet sugar cluster
+        ctx.save();
+        ctx.shadowColor = f.color + '0.5)';
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = `${f.color}${isDark ? '0.4' : '0.65'})`;
         
-        grad.addColorStop(0, `${p.color}${baseAlpha})`);
-        grad.addColorStop(0.4, `${p.color}${baseAlpha * 0.4})`);
-        grad.addColorStop(1, `${p.color}0)`);
-
         ctx.beginPath();
-        ctx.arc(p.x, p.y, pulseRadius * 1.5, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
+        ctx.arc(f.x, f.y, f.radius + 2, 0, Math.PI * 2);
         ctx.fill();
-      });
 
-      // Draw faint connection network lines (constellation effect)
-      for (let i = 0; i < particles.length; i++) {
-        const p1 = particles[i];
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          const dx = p1.x - p2.x;
-          const dy = p1.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
+        // Draw multiple glowing inner sugar granules
+        ctx.fillStyle = '#FFFFFF';
+        const numGranules = Math.min(5, Math.ceil(f.crumbsLeft / 2));
+        for (let g = 0; g < numGranules; g++) {
+          const goffX = Math.sin(g * 12 + f.crumbsLeft) * (f.radius * 0.4);
+          const goffY = Math.cos(g * 12 + f.crumbsLeft) * (f.radius * 0.4);
+          ctx.beginPath();
+          ctx.arc(f.x + goffX, f.y + goffY, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
 
-          // Connection limit based on screen height
-          const maxDist = Math.min(width * 0.35, 110);
-          if (dist < maxDist) {
-            const lineAlpha = (1 - dist / maxDist) * 0.08;
-            ctx.beginPath();
-            ctx.moveTo(p1.x, p1.y);
-            ctx.lineTo(p2.x, p2.y);
-            
-            // Draw dual-color gradients for network strings
-            const lineGrad = ctx.createLinearGradient(p1.x, p1.y, p2.x, p2.y);
-            lineGrad.addColorStop(0, `${p1.color}${lineAlpha})`);
-            lineGrad.addColorStop(1, `${p2.color}${lineAlpha})`);
-            
-            ctx.strokeStyle = lineGrad;
-            ctx.lineWidth = 0.6;
-            ctx.stroke();
+      // Update & Draw Ants
+      ants.forEach((ant) => {
+        ant.legsPhase += ant.legsSpeed;
+
+        // ANT BRAIN STATE MACHINE
+        if (foods.length > 0 && ant.state !== 'carryingFood') {
+          // Sense closest food drop
+          let closestFood: FoodDrop | null = null;
+          let minDist = 250; // sensing radius
+
+          foods.forEach((f) => {
+            const dx = f.x - ant.x;
+            const dy = f.y - ant.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < minDist) {
+              minDist = dist;
+              closestFood = f;
+            }
+          });
+
+          if (closestFood) {
+            ant.state = 'toFood';
+            // Head directly to food
+            const targetX = (closestFood as FoodDrop).x;
+            const targetY = (closestFood as FoodDrop).y;
+            const dx = targetX - ant.x;
+            const dy = targetY - ant.y;
+            ant.targetAngle = Math.atan2(dy, dx);
+
+            // Reached food? Eating action!
+            if (minDist < 10) {
+              (closestFood as FoodDrop).crumbsLeft--;
+              ant.hasCrumb = true;
+              ant.crumbColor = (closestFood as FoodDrop).color;
+              ant.state = 'carryingFood';
+              ant.targetAngle = ant.angle + Math.PI + (Math.random() - 0.5) * 1.5; // turn around
+            }
+          } else {
+            ant.state = 'wandering';
           }
         }
-      }
+
+        // Wandering / Random walking logic
+        if (ant.state === 'wandering' || ant.state === 'carryingFood') {
+          ant.turnTimer--;
+          if (ant.turnTimer <= 0) {
+            // Pick a new target direction
+            ant.targetAngle = ant.angle + (Math.random() - 0.5) * 1.8;
+            ant.turnTimer = Math.floor(Math.random() * 80) + 40;
+          }
+
+          // If carrying food, eventually drop it off screen or absorb it
+          if (ant.hasCrumb && Math.random() < 0.001) {
+            ant.hasCrumb = false;
+          }
+        }
+
+        // Steer angle smoothly toward targetAngle
+        let angleDiff = ant.targetAngle - ant.angle;
+        // Normalize angle difference to -PI to PI
+        angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+        ant.angle += angleDiff * 0.12;
+
+        // Move ant along its angle
+        const speedMultiplier = ant.state === 'toFood' ? 1.4 : ant.hasCrumb ? 0.75 : 1.0;
+        ant.x += Math.cos(ant.angle) * ant.speed * speedMultiplier;
+        ant.y += Math.sin(ant.angle) * ant.speed * speedMultiplier;
+
+        // Avoid offscreen borders by steering back
+        const margin = 30;
+        if (ant.x < margin) {
+          ant.targetAngle = 0 + (Math.random() - 0.5) * 0.5;
+          ant.turnTimer = 40;
+        } else if (ant.x > width - margin) {
+          ant.targetAngle = Math.PI + (Math.random() - 0.5) * 0.5;
+          ant.turnTimer = 40;
+        }
+
+        if (ant.y < margin) {
+          ant.targetAngle = Math.PI / 2 + (Math.random() - 0.5) * 0.5;
+          ant.turnTimer = 40;
+        } else if (ant.y > height - margin) {
+          ant.targetAngle = -Math.PI / 2 + (Math.random() - 0.5) * 0.5;
+          ant.turnTimer = 40;
+        }
+
+        // Wrap around as fallback if completely out of bounds
+        if (ant.x < -20) ant.x = width + 10;
+        if (ant.x > width + 20) ant.x = -10;
+        if (ant.y < -20) ant.y = height + 10;
+        if (ant.y > height + 20) ant.y = -10;
+
+        // Draw ant on canvas
+        drawAnt(ant);
+      });
 
       requestRef.current = requestAnimationFrame(animate);
     };
 
-    // Start rendering frame loop
     requestRef.current = requestAnimationFrame(animate);
 
-    // Complete cleanup on component unmount
     return () => {
       resizeObserver.disconnect();
       if (requestRef.current) {
         cancelAnimationFrame(requestRef.current);
       }
       if (container) {
-        container.removeEventListener('mousemove', handlePointerMove);
-        container.removeEventListener('touchstart', handlePointerMove);
-        container.removeEventListener('touchmove', handlePointerMove);
         container.removeEventListener('mousedown', handlePointerDown);
-        container.removeEventListener('touchend', handlePointerLeave);
-        container.removeEventListener('mouseleave', handlePointerLeave);
+        container.removeEventListener('touchstart', handlePointerDown);
       }
     };
   }, [isDark, theme]);

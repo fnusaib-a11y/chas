@@ -10,6 +10,7 @@ import {
 import { Card, Button, Input, Badge } from '../components/UI';
 import { AppState, Post, User, SocialStory } from '../types';
 import { dbService } from '../dbService';
+import { ImagePicker } from '../components/ImagePicker';
 
 const REACTIONS = [
   { type: 'like', icon: Heart, color: 'text-pink-500', emoji: '❤️' },
@@ -226,15 +227,13 @@ export default function SocialFeedScreen({ state }: { state: AppState }) {
                         exit={{ opacity: 0, height: 0 }}
                         className="space-y-3"
                        >
-                         <div className="flex items-center gap-2 bg-white/5 rounded-2xl p-3 border border-white/5">
-                            <ImageIcon size={18} className="text-white/20" />
-                            <input 
-                              type="text" 
-                              placeholder="Paste Image URL..." 
-                              value={postMediaUrl}
-                              onChange={(e) => setPostMediaUrl(e.target.value)}
-                              className="bg-transparent border-none outline-none text-xs flex-1 text-white/80"
-                            />
+                         <div className="bg-white/5 rounded-2xl p-2 border border-white/5">
+                           <ImagePicker 
+                             label="Post Image (ঐচ্ছিক)" 
+                             value={postMediaUrl}
+                             onChange={setPostMediaUrl}
+                             folder="social_posts"
+                           />
                          </div>
                        </motion.div>
                      )}
@@ -468,17 +467,12 @@ export default function SocialFeedScreen({ state }: { state: AppState }) {
 
               <div className="bg-white/5 rounded-[32px] p-6 border border-white/10 space-y-4">
                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-white/40 uppercase ml-2 tracking-widest">Media URL</label>
-                    <div className="bg-[#020617] rounded-2xl p-4 border border-white/5 flex gap-3 items-center group focus-within:border-indigo-500/50 transition-all">
-                       <ImageIcon size={20} className="text-white/20 group-focus-within:text-indigo-400" />
-                       <input 
-                        type="text" 
-                        placeholder="Paste image URL..."
-                        value={storyUrl}
-                        onChange={(e) => setStoryUrl(e.target.value)}
-                        className="bg-transparent border-none outline-none text-sm text-white flex-1"
-                       />
-                    </div>
+                    <ImagePicker 
+                      label="Story Image" 
+                      value={storyUrl} 
+                      onChange={setStoryUrl} 
+                      folder="stories"
+                    />
                  </div>
 
                  <div className="pt-2 flex gap-3">

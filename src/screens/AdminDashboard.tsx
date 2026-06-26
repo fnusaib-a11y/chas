@@ -40,6 +40,7 @@ import { Card, Button, Badge, Input } from '../components/UI';
 import { dbService } from '../dbService';
 import { generateProductImage } from '../services/geminiService';
 import { resizeBase64Image } from '../lib/imageUtils';
+import { ImagePicker } from '../components/ImagePicker';
 
 interface AdminDashboardProps {
   state: AppState;
@@ -1853,20 +1854,21 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                        </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Image URL</label>
-                    <div className="flex gap-2">
-                      <Input 
-                        placeholder="Image URL" 
-                        value={newProduct.image || ''} 
-                        onChange={(val: string) => setNewProduct({...newProduct, image: val})} 
-                      />
-                      <Button 
+                    <ImagePicker 
+                      label="Product Image"
+                      value={newProduct.image || ''} 
+                      onChange={(val: string) => setNewProduct({...newProduct, image: val})} 
+                      folder="products"
+                    />
+                    <div className="flex items-center justify-end">
+                      <button 
                         onClick={handleGenerateImage}
                         disabled={isGenerating}
-                        className="w-14 h-[52px] rounded-2xl flex items-center justify-center p-0 bg-blue-50 text-blue-500 hover:bg-blue-100 border-none"
+                        className="text-[10px] font-black text-blue-500 bg-blue-50 hover:bg-blue-100 rounded-xl px-3 py-1.5 flex items-center gap-1 uppercase tracking-wider"
                       >
-                        {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
-                      </Button>
+                        {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                        AI দিয়ে ছবি তৈরি করুন
+                      </button>
                     </div>
                   </div>
                   <Button onClick={handleAddProduct} className="w-full h-14 rounded-2xl">Create Product</Button>
@@ -2138,11 +2140,11 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                     value={newBanner.title || ''} 
                     onChange={(val: string) => setNewBanner({...newBanner, title: val})} 
                   />
-                  <Input 
-                    label="Banner Image URL" 
-                    placeholder="https://images.unsplash.com/..." 
+                  <ImagePicker 
+                    label="Banner Image" 
                     value={newBanner.imageUrl || ''} 
                     onChange={(val: string) => setNewBanner({...newBanner, imageUrl: val})} 
+                    folder="banners"
                   />
                   <Input 
                     label="Target Action URL (ঐচ্ছিক)" 
@@ -2199,7 +2201,12 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                     <Input label="Original Price" type="number" value={newDeal.originalPrice} onChange={(val: string) => setNewDeal({...newDeal, originalPrice: Number(val)})} />
                     <Input label="Stock" type="number" value={newDeal.stock} onChange={(val: string) => setNewDeal({...newDeal, stock: Number(val)})} />
                   </div>
-                  <Input label="Image URL" value={newDeal.image} onChange={(val: string) => setNewDeal({...newDeal, image: val})} />
+                  <ImagePicker 
+                    label="Secret Deal Image" 
+                    value={newDeal.image || ''} 
+                    onChange={(val: string) => setNewDeal({...newDeal, image: val})} 
+                    folder="deals"
+                  />
                   <Button onClick={async () => {
                     if (editingItem) {
                       await dbService.updateSecretDeal(editingItem.id, newDeal);
@@ -2294,7 +2301,12 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                     </div>
                   </div>
                   <Input label="Price (৳)" type="number" value={newStudentResource.price} onChange={(val: string) => setNewStudentResource({...newStudentResource, price: Number(val)})} />
-                  <Input label="Preview Image URL" value={newStudentResource.previewUrl} onChange={(val: string) => setNewStudentResource({...newStudentResource, previewUrl: val})} />
+                  <ImagePicker 
+                    label="Preview Image" 
+                    value={newStudentResource.previewUrl || ''} 
+                    onChange={(val: string) => setNewStudentResource({...newStudentResource, previewUrl: val})} 
+                    folder="resources"
+                  />
                   
                   <Button onClick={async () => {
                     if (editingItem) {
