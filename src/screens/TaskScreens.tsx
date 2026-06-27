@@ -203,6 +203,7 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
 
   const urlToOpen = (task.adCode && (task.adCode.startsWith('http') || task.adCode.includes('.'))) ? task.adCode : task.url;
   const finalUrl = urlToOpen ? (urlToOpen.startsWith('http') ? urlToOpen : `https://${urlToOpen}`) : '';
+  const isUrlAlreadyCompleted = (state.taskLogs || []).some(log => log.taskId === task.id && log.status !== 'rejected');
   const youtubeEmbedUrl = getYoutubeEmbedUrl(finalUrl);
   const facebookEmbedUrl = getFacebookEmbedUrl(finalUrl);
   const hasEmbed = !!(youtubeEmbedUrl || facebookEmbedUrl);
@@ -506,54 +507,76 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
       </div>
 
       <div className="p-6 pb-12">
-        {initialDuration > 0 && !isActive && !isFinished && (
-          <Button onClick={startTask} className="w-full h-14">Start Task</Button>
-        )}
-        {initialDuration > 0 && isActive && (
-          <Button disabled className="w-full h-14 bg-gray-200 text-gray-400 font-black">
-            Task in Progress... ({timer}s)
-          </Button>
-        )}
-        {(initialDuration === 0 || isFinished) && (
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="w-full space-y-4"
-          >
-             {isSurveyValid() ? (
-               <div className="bg-green-50 p-4 rounded-2xl border border-green-200 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white shrink-0">
-                     <CheckCircle2 size={24} />
-                  </div>
-                  <div className="text-left">
-                     <p className="text-xs font-black text-green-800 uppercase">Verification Complete!</p>
-                     <p className="text-[10px] text-green-700/70 font-bold uppercase">Reward is ready to be claimed</p>
-                  </div>
-               </div>
-             ) : (
-               <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center text-white shrink-0">
-                     <HelpCircle size={24} />
-                  </div>
-                  <div className="text-left">
-                     <p className="text-xs font-black text-amber-800 uppercase">Answer Required Questions</p>
-                     <p className="text-[10px] text-amber-700/70 font-bold uppercase">Please answer all questions marked with *</p>
-                  </div>
-               </div>
-             )}
-             <Button 
-               onClick={handleComplete} 
-               isLoading={loading}
-               disabled={!isSurveyValid()}
-               className={`w-full h-14 text-sm font-black uppercase tracking-widest ${
-                 isSurveyValid() 
-                   ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/20' 
-                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-               }`}
-             >
-               {hasQuestions ? 'Submit Survey & Claim ৳' + reward : 'Claim Reward ৳' + reward}
-             </Button>
-          </motion.div>
+        {isUrlAlreadyCompleted ? (
+          <div className="w-full space-y-4 text-center">
+            <div className="bg-green-50 p-6 rounded-3xl border border-green-200 flex flex-col items-center gap-3">
+              <div className="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center text-white">
+                <CheckCircle2 size={32} />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-green-800 uppercase">Already Completed! (ইতিমধ্যে সম্পন্ন)</h4>
+                <p className="text-[10px] text-green-700/80 font-bold uppercase mt-1">You have already earned reward for this link.</p>
+              </div>
+            </div>
+            <Button disabled className="w-full h-14 bg-gray-200 text-gray-400 font-black cursor-not-allowed">
+              Already Claimed (৳{reward})
+            </Button>
+          </div>
+        ) : (
+          <>
+            {initialDuration > 0 && !isActive && !isFinished && (
+              <Button onClick={startTask} className="w-full h-14">Start Task</Button>
+            )}
+            {initialDuration === 0 && !isActive && !isFinished && (
+              <Button onClick={startTask} className="w-full h-14">Start Task</Button>
+            )}
+            {initialDuration > 0 && isActive && (
+              <Button disabled className="w-full h-14 bg-gray-200 text-gray-400 font-black">
+                Task in Progress... ({timer}s)
+              </Button>
+            )}
+            {(initialDuration === 0 || isFinished) && (
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="w-full space-y-4"
+              >
+                 {isSurveyValid() ? (
+                   <div className="bg-green-50 p-4 rounded-2xl border border-green-200 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center text-white shrink-0">
+                         <CheckCircle2 size={24} />
+                      </div>
+                      <div className="text-left">
+                         <p className="text-xs font-black text-green-800 uppercase">Verification Complete!</p>
+                         <p className="text-[10px] text-green-700/70 font-bold uppercase">Reward is ready to be claimed</p>
+                      </div>
+                   </div>
+                 ) : (
+                   <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200 flex items-center gap-3">
+                      <div className="w-10 h-10 bg-amber-500 rounded-full flex items-center justify-center text-white shrink-0">
+                         <HelpCircle size={24} />
+                      </div>
+                      <div className="text-left">
+                         <p className="text-xs font-black text-amber-800 uppercase">Answer Required Questions</p>
+                         <p className="text-[10px] text-amber-700/70 font-bold uppercase">Please answer all questions marked with *</p>
+                      </div>
+                   </div>
+                 )}
+                 <Button 
+                   onClick={handleComplete} 
+                   isLoading={loading}
+                   disabled={!isSurveyValid()}
+                   className={`w-full h-14 text-sm font-black uppercase tracking-widest ${
+                     isSurveyValid() 
+                       ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/20' 
+                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                   }`}
+                 >
+                   {hasQuestions ? 'Submit Survey & Claim ৳' + reward : 'Claim Reward ৳' + reward}
+                 </Button>
+              </motion.div>
+            )}
+          </>
         )}
       </div>
     </div>

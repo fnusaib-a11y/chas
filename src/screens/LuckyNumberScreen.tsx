@@ -10,6 +10,7 @@ import { Sparkles, Trophy, Zap, ArrowLeft, Target, Wallet, Clock, Info } from 'l
 import { Card, Button, Input } from '../components/UI';
 import { AppState } from '../types';
 import { dbService } from '../dbService';
+import { ads } from '../lib/ads';
 
 export default function LuckyNumberScreen({ state }: { state: AppState }) {
   const navigate = useNavigate();
@@ -26,6 +27,8 @@ export default function LuckyNumberScreen({ state }: { state: AppState }) {
     try {
       await dbService.buyLuckyNumber(user.id, selectedNum, Number(betAmount));
       alert(`Entered draw with number ${selectedNum}! Results in 1 hour.`);
+      // Show start.io/monetag interstitial ad upon purchase
+      ads.showInterstitial(state.settings);
     } catch (err) {
       console.error(err);
     } finally {

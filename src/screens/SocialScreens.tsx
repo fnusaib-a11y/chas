@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { Share2, Award, Trophy, Bell, Copy, CheckCircle2, TrendingUp, Users, User as UserIcon, Zap, MessageSquare, ChevronRight, Crown } from 'lucide-react';
 import { Card, Button } from '../components/UI';
 import { AppState, UserLevel, User } from '../types';
@@ -44,6 +45,23 @@ const Referral = ({ state }: { state: AppState }) => {
   };
 
   const team = state.users.filter(u => u.referredBy === user.id); // Direct referrals (Tier 1)
+
+  // Referral Milestones calculation
+  const teamSize = team.length;
+  const milestones = [
+    { name: 'Bronze Team', target: 5, reward: 25 },
+    { name: 'Silver Team', target: 15, reward: 100 },
+    { name: 'Gold Team', target: 30, reward: 250 },
+    { name: 'Diamond Team', target: 50, reward: 500 },
+  ];
+  const nextMilestone = milestones.find(m => teamSize < m.target) || { name: 'Ultimate Recruiter', target: 100, reward: 1000 };
+  const currentMilestoneIndex = milestones.findIndex(m => teamSize < m.target);
+  const prevTarget = currentMilestoneIndex > 0 ? milestones[currentMilestoneIndex - 1].target : 0;
+  const progressPercent = Math.min(
+    100,
+    Math.max(0, ((teamSize - prevTarget) / (nextMilestone.target - prevTarget)) * 100)
+  );
+  const invitesNeeded = Math.max(0, nextMilestone.target - teamSize);
 
   // Level 2 Sub-referrals real-time subscription
   useEffect(() => {
@@ -149,6 +167,40 @@ const Referral = ({ state }: { state: AppState }) => {
                   {copied ? 'Copied to Clipboard' : 'Copy referral link'}
                </Button>
                <div className="absolute top-0 right-0 w-24 h-24 bg-[#FFC107]/5 rounded-full -mr-12 -mt-12 group-hover:bg-[#FFC107]/10 transition-colors" />
+            </Card>
+
+            <Card className="p-6 bg-white border border-gray-50 shadow-sm space-y-4 rounded-[32px] text-left">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h4 className="text-xs font-black text-[#37474F] uppercase tracking-wider font-sans">Next Milestone Progress</h4>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest font-sans mt-0.5">{nextMilestone.name}</p>
+                </div>
+                <div className="bg-[#FFC107]/15 text-[#37474F] font-black text-[10px] px-2.5 py-1 rounded-full uppercase tracking-wider font-sans border border-[#FFC107]/30">
+                  {teamSize} / {nextMilestone.target} Invites
+                </div>
+              </div>
+
+              <div className="w-full bg-gray-100 h-3.5 rounded-full overflow-hidden relative">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressPercent}%` }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
+                  className="bg-[#FFC107] h-full rounded-full shadow-inner relative"
+                />
+              </div>
+
+              <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-gray-400 font-sans">
+                <span>{prevTarget} Invites</span>
+                <span>{nextMilestone.target} Invites</span>
+              </div>
+
+              <p className="text-[10px] text-gray-500 leading-relaxed font-sans border-t border-gray-100/60 pt-2.5">
+                {invitesNeeded > 0 ? (
+                  <>You need <span className="text-[#37474F] font-black">{invitesNeeded} more invite{invitesNeeded > 1 ? 's' : ''}</span> to achieve <span className="text-[#37474F] font-black">{nextMilestone.name}</span> status and unlock a <span className="text-green-500 font-black">৳{nextMilestone.reward}</span> cash reward!</>
+                ) : (
+                  <>Congratulations! You have achieved all referral levels. You are an elite member of our community!</>
+                )}
+              </p>
             </Card>
 
             <div className="space-y-4">

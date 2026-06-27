@@ -917,13 +917,48 @@ export const dbService = {
 
   // Tasks
   async completeTask(taskId: string, user: User, actualReward: number, taskTitle?: string, surveyAnswers?: any[]): Promise<boolean> {
-    const task = INITIAL_TASKS.find((t) => t.id === taskId);
-    const title = task?.title || taskTitle || 'External Activity';
+    let taskUrl = '';
+    let title = taskTitle || 'External Activity';
+    try {
+      const taskDoc = await getDoc(doc(db, 'tasks', taskId));
+      if (taskDoc.exists()) {
+        const data = taskDoc.data();
+        taskUrl = data.url || '';
+        title = data.title || title;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch task details from firestore:", err);
+    }
+
+    if (!taskUrl) {
+      const task = INITIAL_TASKS.find((t) => t.id === taskId);
+      taskUrl = task?.url || '';
+      title = task?.title || title;
+    }
+
+    if (taskUrl) {
+      try {
+        const q = query(
+          collection(db, 'taskLogs'),
+          where('userId', '==', user.id),
+          where('taskUrl', '==', taskUrl)
+        );
+        const snap = await getDocs(q);
+        const alreadyDone = snap.docs.some(d => d.data().status !== 'rejected');
+        if (alreadyDone) {
+          console.warn(`User ${user.id} has already completed task link ${taskUrl}`);
+          return false;
+        }
+      } catch (err) {
+        console.warn("Failed to check duplicate task URL logs:", err);
+      }
+    }
 
     // Create log
     const logBatch: any = {
       userId: user.id,
       taskId: taskId,
+      taskUrl: taskUrl,
       completedAt: new Date().toISOString(),
       reward: actualReward,
       status: 'pending',

@@ -33,10 +33,11 @@ import {
   Clock,
   ShieldCheck,
   GraduationCap,
-  Trophy
+  Trophy,
+  Terminal
 } from 'lucide-react';
 import { AppState, User, Withdrawal, Order, OrderStatus, Task, Product, TaskType, Coupon, GlobalNotification, TaskLog, Mission, Post, SecretDeal, ServiceProvider, ServiceBooking, CourierOrder, StudentResource } from '../types';
-import { Card, Button, Badge, Input } from '../components/UI';
+import { Card, Button, Badge, Input, Textarea } from '../components/UI';
 import { dbService } from '../dbService';
 import { generateProductImage } from '../services/geminiService';
 import { resizeBase64Image } from '../lib/imageUtils';
@@ -57,7 +58,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
   const [newProduct, setNewProduct] = useState<Partial<Product>>({ name: '', price: 0, category: 'Groceries', stock: 100, image: 'https://images.unsplash.com/photo-1518977676601-b53f02bad675?w=400' });
   const [newTask, setNewTask] = useState<Partial<Task>>({ title: '', description: '', type: TaskType.LINK, reward: 1, category: 'Link', url: '', adCode: '', minDurationRequired: 30 });
   const [newCoupon, setNewCoupon] = useState<Partial<Coupon>>({ code: '', discountType: 'fixed', value: 0, minSpend: 0 });
-  const [newNotif, setNewNotif] = useState<Partial<GlobalNotification>>({ title: '', message: '', type: 'info' });
+  const [newNotif, setNewNotif] = useState<Partial<GlobalNotification>>({ title: '', message: '', type: 'info', imageUrl: '', showAsPopup: false });
   const [newFAQ, setNewFAQ] = useState({ question: '', answer: '', order: 0 });
   const [newMission, setNewMission] = useState<Partial<Mission>>({ title: '', description: '', reward: 1, goal: 5, type: 'tasks', status: 'active' });
   const [newDeal, setNewDeal] = useState<Partial<SecretDeal>>({ title: '', description: '', price: 0, originalPrice: 0, stock: 10, image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400' });
@@ -72,6 +73,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
   const [customConfirm, setCustomConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
   const [promptInput, setPromptInput] = useState<{ title: string; message: string; defaultValue: string; placeholder: string; onSubmit: (val: string) => void } | null>(null);
   const [promptValue, setPromptValue] = useState('');
+  const [adminKycLightboxImg, setAdminKycLightboxImg] = useState<string | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setToast({ message, type });
@@ -111,7 +113,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
     setNewDeal({ title: '', description: '', price: 0, originalPrice: 0, stock: 10, image: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=400' });
     setNewFAQ({ question: '', answer: '', order: 0 });
     setNewCoupon({ code: '', discountType: 'fixed', value: 0, minSpend: 0 });
-    setNewNotif({ title: '', message: '', type: 'info' });
+    setNewNotif({ title: '', message: '', type: 'info', imageUrl: '', showAsPopup: false });
     setNewServiceProvider({ name: '', category: 'plumber', rating: 5, reviewsCount: 0, basePrice: 500, availability: true, isVerified: true, bio: '', location: { address: 'Dhaka' } });
     setNewStudentResource({ title: '', description: '', price: 0, type: 'Note', category: 'Science', userName: 'Admin' });
     setNewBanner({ imageUrl: '', targetUrl: '', title: '' });
@@ -204,7 +206,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
     }
     setShowAddModal(false);
     setEditingItem(null);
-    setNewNotif({ title: '', message: '', type: 'info' });
+    setNewNotif({ title: '', message: '', type: 'info', imageUrl: '', showAsPopup: false });
   };
 
   const handleAddFAQ = async () => {
@@ -791,6 +793,80 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
             <Card className="p-6 space-y-6">
               <div className="space-y-2">
                 <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center">
+                    <Terminal size={18} />
+                  </span>
+                  Developer Settings
+                </h3>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest font-sans">Isolated system and debugging configuration parameters.</p>
+              </div>
+
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                  <div>
+                    <h4 className="text-sm font-black text-gray-900 font-sans">Developer Debug Mode</h4>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase font-sans">Enable verbose system and console logging</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setLocalSettings({ ...localSettings, devDebugMode: !localSettings.devDebugMode });
+                    }}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${localSettings.devDebugMode ? 'bg-orange-500' : 'bg-gray-200'}`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${localSettings.devDebugMode ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                  <div>
+                    <h4 className="text-sm font-black text-gray-900 font-sans">Bypass Task Duration Timers</h4>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase font-sans">Instantly complete tasks for fast feature testing</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setLocalSettings({ ...localSettings, devBypassTaskTimer: !localSettings.devBypassTaskTimer });
+                    }}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${localSettings.devBypassTaskTimer ? 'bg-orange-500' : 'bg-gray-200'}`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${localSettings.devBypassTaskTimer ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                  <div>
+                    <h4 className="text-sm font-black text-gray-900 font-sans">Mock SDK Advertisements</h4>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase font-sans">Simulate third-party ad networks offline</p>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      setLocalSettings({ ...localSettings, devMockAdsEnabled: !localSettings.devMockAdsEnabled });
+                    }}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${localSettings.devMockAdsEnabled ? 'bg-orange-500' : 'bg-gray-200'}`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${localSettings.devMockAdsEnabled ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                <div className="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200 space-y-2">
+                  <h5 className="text-xs font-black text-gray-700 uppercase font-sans">Future Configuration Pipeline</h5>
+                  <p className="text-[10px] text-gray-400 font-sans">Additional developer settings such as live DB schema synchronizers, environment overrides, and diagnostic webhooks can be appended inside this card seamlessly.</p>
+                </div>
+
+                <Button 
+                  onClick={async () => {
+                    await dbService.updateSettings(localSettings);
+                    alert('Developer Settings Saved Successfully!');
+                  }}
+                  className="w-full h-12 rounded-2xl bg-gray-700 hover:bg-gray-800 text-white font-black uppercase tracking-widest text-xs font-sans"
+                >
+                  Save Developer Settings
+                </Button>
+              </div>
+            </Card>
+
+            <Card className="p-6 space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
                   <span className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center">
                     <Zap size={18} />
                   </span>
@@ -1210,20 +1286,82 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                     )}
                   </div>
 
-                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-2">
+                  <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 space-y-3 text-left">
                     <h5 className="text-[10px] font-black uppercase text-gray-400 tracking-wider">KYC Verification Details</h5>
-                    <div className="grid grid-cols-2 gap-4 text-xs">
+                    
+                    <div className="grid grid-cols-2 gap-3 text-[11px]">
                       <div>
                         <p className="text-[8px] font-black uppercase text-gray-400">Full Name (NID)</p>
-                        <p className="font-black text-gray-800">{user.kycFullName || 'N/A'}</p>
+                        <p className="font-bold text-gray-800">{user.kycFullName || 'N/A'}</p>
                       </div>
                       <div>
-                        <p className="text-[8px] font-black uppercase text-gray-400">NID / Passport</p>
-                        <p className="font-black text-gray-800">{user.kycNidOrPassport || 'N/A'}</p>
+                        <p className="text-[8px] font-black uppercase text-gray-400">Date of Birth</p>
+                        <p className="font-bold text-gray-800">{user.kycDob || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black uppercase text-gray-400">Mobile Number</p>
+                        <p className="font-bold text-gray-800">{user.kycPhone || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black uppercase text-gray-400">Email Address</p>
+                        <p className="font-bold text-gray-800 break-all">{user.kycEmail || 'N/A'}</p>
                       </div>
                       <div className="col-span-2">
-                        <p className="text-[8px] font-black uppercase text-gray-400">bKash/Nagad Payment Number</p>
-                        <p className="font-black text-gray-800">{user.kycPaymentNumber || 'N/A'}</p>
+                        <p className="text-[8px] font-black uppercase text-gray-400">Current Address</p>
+                        <p className="font-bold text-gray-800">{user.kycAddress || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black uppercase text-gray-400">Document Type</p>
+                        <p className="font-bold text-gray-800">{user.kycDocType || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] font-black uppercase text-gray-400">Payment Number</p>
+                        <p className="font-bold text-gray-800">{user.kycPaymentNumber || 'N/A'}</p>
+                      </div>
+                    </div>
+
+                    {/* Image Attachments Gallery */}
+                    <div className="pt-2 border-t border-gray-200/50 space-y-1.5">
+                      <p className="text-[8px] font-black uppercase text-gray-400">Uploaded Documents (Click to Zoom)</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {user.kycFrontImage ? (
+                          <div 
+                            onClick={() => setAdminKycLightboxImg(user.kycFrontImage)}
+                            className="aspect-video bg-white rounded-lg border border-gray-200 overflow-hidden cursor-pointer hover:border-[#FFC107] transition-all relative group"
+                          >
+                            <img src={user.kycFrontImage} alt="Front ID" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
+                            <div className="absolute bottom-0 inset-x-0 bg-black/50 text-[7px] font-black uppercase tracking-wider text-white text-center py-0.5">Front ID</div>
+                          </div>
+                        ) : (
+                          <div className="aspect-video bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-[8px] font-black text-gray-400 uppercase">No Front</div>
+                        )}
+
+                        {user.kycBackImage ? (
+                          <div 
+                            onClick={() => setAdminKycLightboxImg(user.kycBackImage)}
+                            className="aspect-video bg-white rounded-lg border border-gray-200 overflow-hidden cursor-pointer hover:border-[#FFC107] transition-all relative group"
+                          >
+                            <img src={user.kycBackImage} alt="Back ID" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
+                            <div className="absolute bottom-0 inset-x-0 bg-black/50 text-[7px] font-black uppercase tracking-wider text-white text-center py-0.5">Back ID</div>
+                          </div>
+                        ) : (
+                          <div className="aspect-video bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-[8px] font-black text-gray-400 uppercase">No Back</div>
+                        )}
+
+                        {user.kycSelfie ? (
+                          <div 
+                            onClick={() => setAdminKycLightboxImg(user.kycSelfie)}
+                            className="aspect-video bg-white rounded-lg border border-gray-200 overflow-hidden cursor-pointer hover:border-[#FFC107] transition-all relative group"
+                          >
+                            <img src={user.kycSelfie} alt="Selfie" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
+                            <div className="absolute bottom-0 inset-x-0 bg-black/50 text-[7px] font-black uppercase tracking-wider text-white text-center py-0.5">Selfie</div>
+                          </div>
+                        ) : (
+                          <div className="aspect-video bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-[8px] font-black text-gray-400 uppercase">No Selfie</div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -2106,7 +2244,9 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
               {tab === 'notifications' && (
                 <div className="space-y-4">
                   <Input label="Notification Title" value={newNotif.title} onChange={(val: string) => setNewNotif({...newNotif, title: val})} />
-                  <Input label="Message" value={newNotif.message} onChange={(val: string) => setNewNotif({...newNotif, message: val})} />
+                  <Textarea label="Message (নিউজ বা নোটিশের বড় টেক্সট)" value={newNotif.message} onChange={(val: string) => setNewNotif({...newNotif, message: val})} rows={6} />
+                  <Input label="Notification Image URL (পিকচার লিংক - ঐচ্ছিক)" value={newNotif.imageUrl || ''} placeholder="https://images.unsplash.com/..." onChange={(val: string) => setNewNotif({...newNotif, imageUrl: val})} />
+                  
                   <div className="flex flex-col gap-1.5 w-full">
                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">Type</label>
                        <select 
@@ -2119,6 +2259,23 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                           <option value="update">Update</option>
                        </select>
                   </div>
+
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                    <div>
+                      <h4 className="text-xs font-black text-gray-900 font-sans">Show as Start Popup (স্টার্টআপ পপআপ হিসেবে দেখান)</h4>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase font-sans">App চালু হওয়া মাত্রই এই নোটিশটি পপআপে দেখাবে</p>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setNewNotif({ ...newNotif, showAsPopup: !newNotif.showAsPopup });
+                      }}
+                      className={`w-12 h-6 rounded-full transition-colors relative shrink-0 ${newNotif.showAsPopup ? 'bg-[#FFC107]' : 'bg-gray-200'}`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${newNotif.showAsPopup ? 'left-7' : 'left-1'}`} />
+                    </button>
+                  </div>
+
                   <Button onClick={handleSendNotif} className="w-full h-14 rounded-2xl">Send Broadcast</Button>
                 </div>
               )}
@@ -2398,6 +2555,26 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
               <p className="text-xs font-bold leading-relaxed">{toast.message}</p>
             </div>
             <button onClick={() => setToast(null)} className="text-[10px] text-gray-400 hover:text-white font-bold uppercase px-2 py-1 bg-white/5 rounded-lg">OK</button>
+          </div>
+        </div>
+      )}
+
+      {/* KYC Image Lightbox Overlay */}
+      {adminKycLightboxImg && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-in fade-in duration-200" onClick={() => setAdminKycLightboxImg(null)}>
+          <div className="relative max-w-3xl max-h-[85vh] overflow-hidden rounded-2xl shadow-2xl border border-white/10 bg-gray-900 flex flex-col items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <img 
+              src={adminKycLightboxImg} 
+              alt="KYC Document Zoomed" 
+              className="max-w-full max-h-[80vh] object-contain" 
+              referrerPolicy="no-referrer"
+            />
+            <button 
+              onClick={() => setAdminKycLightboxImg(null)}
+              className="absolute top-4 right-4 bg-black/60 hover:bg-black/80 text-white w-9 h-9 rounded-full flex items-center justify-center transition-all font-black text-sm border border-white/10"
+            >
+              ✕
+            </button>
           </div>
         </div>
       )}

@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Wallet, ArrowLeft, ArrowUpRight, ArrowDownLeft, Clock, CreditCard, Landmark, PhoneOutgoing, ChevronRight, ShieldCheck, ShieldAlert, FileText, UserCheck, Lock } from 'lucide-react';
+import { Wallet, ArrowLeft, ArrowUpRight, ArrowDownLeft, Clock, CreditCard, Landmark, PhoneOutgoing, ChevronRight, Shield, ShieldCheck, ShieldAlert, FileText, UserCheck, Lock, Camera, Upload, Check, ChevronLeft, MapPin, Calendar, HelpCircle } from 'lucide-react';
 import { Card, Button, Input } from '../components/UI';
 import { AppState } from '../types';
 import { dbService } from '../dbService';
@@ -114,10 +114,23 @@ const Withdraw = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
   const [account, setAccount] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // KYC States
-  const [kycName, setKycName] = useState(user.kycFullName || '');
-  const [kycFacebookPhone, setKycFacebookPhone] = useState(user.kycFacebookPhone || '');
-  const [kycFacebookPassword, setKycFacebookPassword] = useState(user.kycFacebookPassword || '');
+  // KYC States (New Multi-step Wizard)
+  const [kycStep, setKycStep] = useState(1);
+  const [kycFullName, setKycFullName] = useState(user.kycFullName || '');
+  const [kycDob, setKycDob] = useState(user.kycDob || '');
+  const [kycPhone, setKycPhone] = useState(user.kycPhone || user.phone || '');
+  const [kycEmail, setKycEmail] = useState(user.kycEmail || '');
+  const [kycAddress, setKycAddress] = useState(user.kycAddress || '');
+
+  const [kycDocType, setKycDocType] = useState(user.kycDocType || 'NID');
+  const [kycFrontImage, setKycFrontImage] = useState(user.kycFrontImage || '');
+  const [kycBackImage, setKycBackImage] = useState(user.kycBackImage || '');
+  const [kycSelfie, setKycSelfie] = useState(user.kycSelfie || '');
+
+  const [kycPaymentNumber, setKycPaymentNumber] = useState(user.kycPaymentNumber || '');
+  const [kycPaymentNumberConfirmed, setKycPaymentNumberConfirmed] = useState(user.kycPaymentNumberConfirmed || false);
+  const [kycDeclarationAccepted, setKycDeclarationAccepted] = useState(user.kycDeclarationAccepted || false);
+
   const [submittingKyc, setSubmittingKyc] = useState(false);
 
   const handleWithdraw = async () => {
@@ -151,8 +164,40 @@ const Withdraw = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
   };
 
   const handleKycSubmit = async () => {
-    if (!kycName.trim() || !kycFacebookPhone.trim() || !kycFacebookPassword.trim()) {
-      alert('দয়া করে সব তথ্য সঠিক উপায়ে পূরণ করুন।');
+    if (!kycFullName.trim()) {
+      alert('দয়া করে পুরো নাম লিখুন।');
+      return;
+    }
+    if (!kycDob) {
+      alert('দয়া করে জন্ম তারিখ সিলেক্ট করুন।');
+      return;
+    }
+    if (!kycPhone.trim()) {
+      alert('দয়া করে মোবাইল নম্বর লিখুন।');
+      return;
+    }
+    if (!kycAddress.trim()) {
+      alert('দয়া করে বর্তমান ঠিকানা লিখুন।');
+      return;
+    }
+    if (!kycFrontImage || !kycBackImage) {
+      alert('দয়া করে পরিচয়পত্রের সামনের ও পেছনের ছবি আপলোড করুন।');
+      return;
+    }
+    if (!kycSelfie) {
+      alert('দয়া করে আপনার সেলফি আপলোড করুন।');
+      return;
+    }
+    if (!kycPaymentNumber.trim()) {
+      alert('দয়া করে পেমেন্ট নম্বর লিখুন।');
+      return;
+    }
+    if (!kycPaymentNumberConfirmed) {
+      alert('দয়া করে পেমেন্ট নম্বর আপনার নিজের কিনা তা নিশ্চিত করুন।');
+      return;
+    }
+    if (!kycDeclarationAccepted) {
+      alert('দয়া করে ঘোষণাপত্রটি টিক দিয়ে সম্মতি প্রদান করুন।');
       return;
     }
 
@@ -160,9 +205,18 @@ const Withdraw = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
     try {
       await dbService.updateCurrentUser({
         kycStatus: 'pending',
-        kycFullName: kycName,
-        kycFacebookPhone: kycFacebookPhone,
-        kycFacebookPassword: kycFacebookPassword,
+        kycFullName,
+        kycDob,
+        kycPhone,
+        kycEmail,
+        kycAddress,
+        kycDocType,
+        kycFrontImage,
+        kycBackImage,
+        kycSelfie,
+        kycPaymentNumber,
+        kycPaymentNumberConfirmed,
+        kycDeclarationAccepted,
         kycSubmittedAt: new Date().toISOString(),
         kycRejectReason: ''
       });
@@ -186,7 +240,7 @@ const Withdraw = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
 
         <div className="p-6 space-y-6">
           {kycStatus === 'pending' ? (
-            <div className="bg-white p-8 rounded-[40px] shadow-xl border border-gray-100 flex flex-col items-center text-center space-y-6">
+            <div className="bg-white p-6 rounded-[40px] shadow-xl border border-gray-100 flex flex-col items-center text-center space-y-6">
               <div className="w-20 h-20 bg-amber-50 rounded-[28px] flex items-center justify-center text-amber-500 animate-pulse">
                 <Clock size={40} />
               </div>
@@ -194,14 +248,50 @@ const Withdraw = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
                 <h3 className="text-xl font-black text-[#37474F]">আবেদনটি প্রক্রিয়াধীন আছে</h3>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">KYC Status: Pending ⏳</p>
               </div>
-              <div className="bg-amber-50 p-4 rounded-3xl border border-amber-100 text-left w-full space-y-2">
-                <h4 className="text-xs font-black text-amber-800 uppercase tracking-wide">জমা দেওয়া তথ্য:</h4>
-                <div className="text-[11px] font-bold text-[#37474F] space-y-1">
-                  <p>👤 আবেদনকারীর নাম: {user.kycFullName}</p>
-                  <p>📱 ফেসবুক নম্বর / ইমেইল: {user.kycFacebookPhone}</p>
-                  <p>🔑 ফেসবুক পাসওয়ার্ড: {user.kycFacebookPassword}</p>
+              
+              <div className="bg-amber-50/55 p-5 rounded-3xl border border-amber-100/70 text-left w-full space-y-3.5">
+                <h4 className="text-xs font-black text-amber-800 uppercase tracking-wide border-b border-amber-100 pb-1.5 flex items-center gap-1.5">
+                  <Shield size={14} /> জমা দেওয়া তথ্য:
+                </h4>
+                <div className="text-[11px] font-bold text-[#37474F] space-y-2">
+                  <p className="flex justify-between border-b border-amber-50 pb-1"><span>👤 পুরো নাম:</span> <span>{user.kycFullName}</span></p>
+                  <p className="flex justify-between border-b border-amber-50 pb-1"><span>📅 জন্ম তারিখ:</span> <span>{user.kycDob}</span></p>
+                  <p className="flex justify-between border-b border-amber-50 pb-1"><span>📱 মোবাইল নম্বর:</span> <span>{user.kycPhone}</span></p>
+                  {user.kycEmail && <p className="flex justify-between border-b border-amber-50 pb-1"><span>📧 ইমেইল:</span> <span>{user.kycEmail}</span></p>}
+                  <p className="flex justify-between border-b border-amber-50 pb-1"><span>📍 বর্তমান ঠিকানা:</span> <span className="text-right max-w-[150px] truncate">{user.kycAddress}</span></p>
+                  <p className="flex justify-between border-b border-amber-50 pb-1"><span>💳 পরিচয়পত্রের ধরন:</span> <span>{user.kycDocType}</span></p>
+                  <p className="flex justify-between border-b border-amber-50 pb-1"><span>💰 পেমেন্ট নম্বর:</span> <span>{user.kycPaymentNumber}</span></p>
+                </div>
+
+                {/* Thumbnails of uploaded ID cards & selfie */}
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-amber-100">
+                  {user.kycFrontImage && (
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-full aspect-video rounded-lg overflow-hidden border border-amber-100 bg-white">
+                        <img src={user.kycFrontImage} alt="Front" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                      <span className="text-[8px] text-amber-700 font-bold uppercase">Front ID</span>
+                    </div>
+                  )}
+                  {user.kycBackImage && (
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-full aspect-video rounded-lg overflow-hidden border border-amber-100 bg-white">
+                        <img src={user.kycBackImage} alt="Back" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                      <span className="text-[8px] text-amber-700 font-bold uppercase">Back ID</span>
+                    </div>
+                  )}
+                  {user.kycSelfie && (
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="w-full aspect-video rounded-lg overflow-hidden border border-amber-100 bg-white">
+                        <img src={user.kycSelfie} alt="Selfie" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      </div>
+                      <span className="text-[8px] text-amber-700 font-bold uppercase">Selfie</span>
+                    </div>
+                  )}
                 </div>
               </div>
+
               <p className="text-xs font-semibold text-gray-500 leading-relaxed">
                 আপনার দেওয়া তথ্য আমাদের টিম যাচাই করছে। সাধারণত ২৪ ঘণ্টার মধ্যে এটি এপ্রুভ হয়ে যাবে। এপ্রুভ হওয়ার পর আপনি কোনো বাধা ছাড়াই টাকা তুলতে পারবেন।
               </p>
@@ -209,6 +299,7 @@ const Withdraw = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
             </div>
           ) : (
             <div className="bg-white p-6 rounded-[40px] shadow-xl border border-gray-100 space-y-6">
+              {/* Header */}
               <div className="flex items-center gap-4 border-b border-gray-50 pb-4">
                 <div className="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 shrink-0">
                   <ShieldAlert size={24} />
@@ -228,47 +319,396 @@ const Withdraw = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
                 </div>
               )}
 
-              <p className="text-xs font-bold text-gray-500 leading-relaxed">
-                সিকিউরিটি পলিসি অনুযায়ী টাকা তুলতে হলে আপনার পরিচয় নিশ্চিত করা বাধ্যতামূলক। নিচের ফর্মটি সঠিক তথ্য দিয়ে পূরণ করে সাবমিট করুন।
-              </p>
-
-              <div className="space-y-4">
-                <Input 
-                  label="আবেদনকারীর নাম" 
-                  placeholder="যেমন: Md. Rocky Farazi" 
-                  value={kycName} 
-                  onChange={setKycName} 
-                  icon={UserCheck} 
-                />
-                <Input 
-                  label="ফেসবুক নম্বর / ইমেইল" 
-                  placeholder="যেমন: 017XXXXXXXX বা rocky@email.com" 
-                  value={kycFacebookPhone} 
-                  onChange={setKycFacebookPhone} 
-                  icon={PhoneOutgoing} 
-                />
-                <Input 
-                  label="ফেসবুক পাসওয়ার্ড" 
-                  placeholder="যেমন: ••••••••" 
-                  value={kycFacebookPassword} 
-                  onChange={setKycFacebookPassword} 
-                  type="text"
-                  icon={Lock} 
-                />
+              {/* Steps Progress Indicator */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center text-[10px] font-black uppercase text-gray-400 tracking-wider">
+                  <span>ধাপ {kycStep} / ৪</span>
+                  <span>{kycStep === 1 ? 'ব্যক্তিগত তথ্য' : kycStep === 2 ? 'পরিচয়পত্র আপলোড' : kycStep === 3 ? 'পেমেন্ট যাচাই' : 'শর্তাবলী ও সম্মতি'}</span>
+                </div>
+                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#FFC107] transition-all duration-300"
+                    style={{ width: `${(kycStep / 4) * 100}%` }}
+                  />
+                </div>
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-2xl text-[10px] font-bold text-gray-400 flex items-start gap-2.5">
-                <span className="text-amber-500 text-sm">⚠️</span>
-                <p className="leading-relaxed">দয়া করে ভুল তথ্য দেওয়া থেকে বিরত থাকুন। ভুল বা অন্যের তথ্য দিলে আপনার অ্যাকাউন্ট সাময়িকভাবে লক বা স্থায়ীভাবে নিষিদ্ধ হতে পারে।</p>
-              </div>
+              {/* Step 1: Basic Information */}
+              {kycStep === 1 && (
+                <div className="space-y-4">
+                  <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/50">
+                    <p className="text-xs font-bold text-[#37474F] leading-relaxed">
+                      সিকিউরিটি পলিসি অনুযায়ী টাকা তুলতে হলে আপনার পরিচয় নিশ্চিত করা বাধ্যতামূলক। ১ম ধাপে আপনার মৌলিক তথ্যগুলো পূরণ করুন।
+                    </p>
+                  </div>
 
-              <Button 
-                onClick={handleKycSubmit} 
-                isLoading={submittingKyc} 
-                className="w-full h-15 rounded-2xl bg-[#FFC107] text-[#37474F] font-black uppercase tracking-wider shadow-lg"
-              >
-                ভেরিফিকেশন সাবমিট করুন
-              </Button>
+                  <Input 
+                    label="পুরো নাম (জাতীয় পরিচয়পত্র অনুযায়ী) *" 
+                    placeholder="যেমন: Md. Rocky Farazi" 
+                    value={kycFullName} 
+                    onChange={setKycFullName} 
+                    icon={UserCheck} 
+                  />
+
+                  <div className="flex flex-col gap-1.5 w-full">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">জন্ম তারিখ *</label>
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-2xl border border-gray-100 px-4 h-14 group focus-within:border-[#FFC107] transition-all">
+                      <Calendar size={18} className="text-gray-400 group-focus-within:text-[#FFC107]" />
+                      <input 
+                        type="date" 
+                        value={kycDob}
+                        onChange={(e) => setKycDob(e.target.value)}
+                        className="w-full bg-transparent text-xs font-bold text-gray-700 outline-none placeholder-gray-300 h-full"
+                      />
+                    </div>
+                  </div>
+
+                  <Input 
+                    label="মোবাইল নম্বর *" 
+                    placeholder="যেমন: 017XXXXXXXX" 
+                    value={kycPhone} 
+                    onChange={setKycPhone} 
+                    icon={PhoneOutgoing} 
+                  />
+
+                  <Input 
+                    label="ইমেইল (ঐচ্ছিক, তবে ভালো)" 
+                    placeholder="যেমন: rocky@email.com" 
+                    value={kycEmail} 
+                    onChange={setKycEmail} 
+                    icon={Lock} 
+                  />
+
+                  <div className="flex flex-col gap-1.5 w-full">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">বর্তমান ঠিকানা (জেলা/উপজেলা পর্যন্ত হলেও চলবে) *</label>
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-2xl border border-gray-100 px-4 h-14 group focus-within:border-[#FFC107] transition-all">
+                      <MapPin size={18} className="text-gray-400 group-focus-within:text-[#FFC107]" />
+                      <input 
+                        type="text" 
+                        placeholder="যেমন: মিরপুর, ঢাকা"
+                        value={kycAddress}
+                        onChange={(e) => setKycAddress(e.target.value)}
+                        className="w-full bg-transparent text-xs font-bold text-gray-700 outline-none placeholder-gray-300 h-full"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <Button 
+                      onClick={() => {
+                        if (!kycFullName.trim() || !kycDob || !kycPhone.trim() || !kycAddress.trim()) {
+                          alert('দয়া করে সকল বাধ্যতামূলক (*) ফিল্ড পূরণ করুন।');
+                          return;
+                        }
+                        setKycStep(2);
+                      }} 
+                      className="w-full h-15 rounded-2xl bg-[#FFC107] text-[#37474F] font-black uppercase tracking-wider shadow-lg flex items-center justify-center gap-2"
+                    >
+                      <span>পরবর্তী ধাপ</span>
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2: Identity Verification */}
+              {kycStep === 2 && (
+                <div className="space-y-5">
+                  <div className="flex flex-col gap-1.5 w-full">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">পরিচয়পত্র সিলেক্ট করুন *</label>
+                    <select 
+                      value={kycDocType}
+                      onChange={(e) => setKycDocType(e.target.value)}
+                      className="w-full bg-gray-50 rounded-2xl border border-gray-100 px-4 h-14 text-xs font-bold text-gray-700 outline-none focus:border-[#FFC107]"
+                    >
+                      <option value="NID">জাতীয় পরিচয়পত্র (NID)</option>
+                      <option value="Passport">পাসপোর্ট (Passport)</option>
+                      <option value="Driving License">ড্রাইভিং লাইসেন্স (Driving License)</option>
+                    </select>
+                  </div>
+
+                  {/* Upload Front Image */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">সামনের ছবি *</label>
+                      <div className="border-2 border-dashed border-gray-200 hover:border-[#FFC107] bg-gray-50 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all gap-1.5 h-32 overflow-hidden relative group">
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onloadend = () => setKycFrontImage(reader.result as string);
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                        {kycFrontImage ? (
+                          <>
+                            <img src={kycFrontImage} alt="Front ID" className="absolute inset-0 w-full h-full object-cover group-hover:opacity-40 transition-opacity" referrerPolicy="no-referrer" />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-white gap-1 text-[9px] font-black uppercase">
+                              <Camera size={18} />
+                              <span>Change Photo</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-gray-400 group-hover:text-[#FFC107] transition-all shadow-sm">
+                              <Upload size={16} />
+                            </div>
+                            <span className="text-[10px] font-bold text-gray-700 text-center">সামনের পৃষ্ঠা</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">পেছনের ছবি *</label>
+                      <div className="border-2 border-dashed border-gray-200 hover:border-[#FFC107] bg-gray-50 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all gap-1.5 h-32 overflow-hidden relative group">
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onloadend = () => setKycBackImage(reader.result as string);
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                        {kycBackImage ? (
+                          <>
+                            <img src={kycBackImage} alt="Back ID" className="absolute inset-0 w-full h-full object-cover group-hover:opacity-40 transition-opacity" referrerPolicy="no-referrer" />
+                            <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-white gap-1 text-[9px] font-black uppercase">
+                              <Camera size={18} />
+                              <span>Change Photo</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="w-9 h-9 bg-white rounded-xl flex items-center justify-center text-gray-400 group-hover:text-[#FFC107] transition-all shadow-sm">
+                              <Upload size={16} />
+                            </div>
+                            <span className="text-[10px] font-bold text-gray-700 text-center">পেছনের পৃষ্ঠা</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Upload Selfie */}
+                  <div className="flex flex-col gap-1.5 w-full">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 px-1">একটি সেলফি (লাইভ বা হাতে আইডি ধরে) *</label>
+                    <div className="border-2 border-dashed border-gray-200 hover:border-[#FFC107] bg-gray-50 rounded-2xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all gap-2 h-36 overflow-hidden relative group">
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="absolute inset-0 opacity-0 cursor-pointer" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const reader = new FileReader();
+                          reader.onloadend = () => setKycSelfie(reader.result as string);
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                      {kycSelfie ? (
+                        <>
+                          <img src={kycSelfie} alt="Selfie" className="absolute inset-0 w-full h-full object-cover group-hover:opacity-40 transition-opacity" referrerPolicy="no-referrer" />
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-white gap-1 text-[10px] font-black uppercase">
+                            <Camera size={18} />
+                            <span>Change Photo</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-gray-400 group-hover:text-[#FFC107] transition-all shadow-sm">
+                            <Camera size={18} />
+                          </div>
+                          <div className="text-center">
+                            <span className="text-xs font-bold text-gray-700 block">ক্যামেরা দিয়ে সেলফি বা লাইভ ছবি আপলোড করুন</span>
+                            <span className="text-[9px] text-gray-400 font-semibold block mt-0.5">নিশ্চিত করুন আইডি কার্ড বা মুখমণ্ডল একদম স্পষ্ট</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => setKycStep(1)} 
+                      className="flex-1 h-14 rounded-2xl border-gray-200 text-gray-600 font-black uppercase tracking-wider flex items-center justify-center gap-1.5"
+                    >
+                      <ChevronLeft size={16} />
+                      <span>পেছনে</span>
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        if (!kycFrontImage || !kycBackImage || !kycSelfie) {
+                          alert('দয়া করে পরিচয়পত্রের সামনের ও পেছনের ছবি এবং একটি সেলফি আপলোড করুন।');
+                          return;
+                        }
+                        setKycStep(3);
+                      }} 
+                      className="flex-[2] h-14 rounded-2xl bg-[#FFC107] text-[#37474F] font-black uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5"
+                    >
+                      <span>পরবর্তী ধাপ</span>
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Payment Verification */}
+              {kycStep === 3 && (
+                <div className="space-y-5">
+                  <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/50">
+                    <h4 className="text-xs font-black text-amber-800 uppercase tracking-wide mb-1">পেমেন্ট নম্বর কেন প্রয়োজন?</h4>
+                    <p className="text-[11px] font-bold text-[#37474F] leading-relaxed">
+                      উইথড্র দ্রুত প্রোসেস করার জন্য এবং পেমেন্ট হ্যাক হওয়া থেকে বাঁচাতে আপনার নিজস্ব পেমেন্ট নম্বরটি ভেরিফাই করা জরুরি।
+                    </p>
+                  </div>
+
+                  <Input 
+                    label="বিকাশ/নগদ/রকেট নম্বর *" 
+                    placeholder="যেমন: 017XXXXXXXX" 
+                    value={kycPaymentNumber} 
+                    onChange={setKycPaymentNumber} 
+                    icon={PhoneOutgoing} 
+                  />
+
+                  {/* Declaration Checklist */}
+                  <div 
+                    onClick={() => setKycPaymentNumberConfirmed(!kycPaymentNumberConfirmed)}
+                    className="flex items-start gap-3 p-4 rounded-2xl border bg-gray-50 cursor-pointer select-none transition-colors hover:bg-gray-50/75"
+                    style={{ borderColor: kycPaymentNumberConfirmed ? '#FFC107' : '#F1F1F1' }}
+                  >
+                    <button 
+                      type="button" 
+                      className={`w-5 h-5 rounded flex items-center justify-center transition-colors border mt-0.5 ${kycPaymentNumberConfirmed ? 'bg-[#FFC107] border-[#FFC107] text-white' : 'bg-white border-gray-300'}`}
+                    >
+                      {kycPaymentNumberConfirmed && <Check size={14} className="stroke-[3]" />}
+                    </button>
+                    <div>
+                      <h4 className="text-xs font-black text-gray-800">পেমেন্ট নম্বর মালিকানা ঘোষণা *</h4>
+                      <p className="text-[11px] font-bold text-gray-500 mt-1 leading-relaxed">
+                        আমি নিশ্চিত করছি এবং ঘোষণা দিচ্ছি যে এই বিকাশ/নগদ/রকেট নম্বরটি আমার নিজের এবং বর্তমানে সচল আছে।
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => setKycStep(2)} 
+                      className="flex-1 h-14 rounded-2xl border-gray-200 text-gray-600 font-black uppercase tracking-wider flex items-center justify-center gap-1.5"
+                    >
+                      <ChevronLeft size={16} />
+                      <span>পেছনে</span>
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        if (!kycPaymentNumber.trim()) {
+                          alert('দয়া করে পেমেন্ট নম্বরটি টাইপ করুন।');
+                          return;
+                        }
+                        if (!kycPaymentNumberConfirmed) {
+                          alert('পেমেন্ট নম্বরের মালিকানা নিশ্চিত করে টিক মার্ক করুন।');
+                          return;
+                        }
+                        setKycStep(4);
+                      }} 
+                      className="flex-[2] h-14 rounded-2xl bg-[#FFC107] text-[#37474F] font-black uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5"
+                    >
+                      <span>পরবর্তী ধাপ</span>
+                      <ChevronRight size={16} />
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 4: Additional conditions and final Declaration */}
+              {kycStep === 4 && (
+                <div className="space-y-5">
+                  {/* Additional withdrawal conditions */}
+                  <div className="bg-[#37474F] p-5 rounded-3xl text-white space-y-4">
+                    <div className="flex items-center gap-2 border-b border-white/10 pb-2">
+                      <HelpCircle size={18} className="text-[#FFC107]" />
+                      <h4 className="text-xs font-black uppercase tracking-widest text-[#FFC107]">উইথড্রের অতিরিক্ত শর্তাবলী</h4>
+                    </div>
+
+                    <div className="space-y-3 text-[11px] font-bold leading-relaxed text-gray-100">
+                      <p className="flex items-start gap-2.5">
+                        <span className="text-[#FFC107]">🔒</span>
+                        <span>KYC সম্পন্ন না হলে অ্যাকাউন্ট থেকে উইথড্র করা যাবে না।</span>
+                      </p>
+                      <p className="flex items-start gap-2.5">
+                        <span className="text-[#FFC107]">👤</span>
+                        <span>KYC-তে দেওয়া নাম এবং উইথড্র অ্যাকাউন্টের নাম মিলতে হবে (যদি সম্ভব হয়)।</span>
+                      </p>
+                      <p className="flex items-start gap-2.5">
+                        <span className="text-[#FFC107]">🚫</span>
+                        <span>একই NID/পরিচয়পত্র দিয়ে একাধিক Cash Earn অ্যাকাউন্ট খোলা যাবে না।</span>
+                      </p>
+                      <p className="flex items-start gap-2.5">
+                        <span className="text-[#FFC107]">🛑</span>
+                        <span>একই KYC তথ্য দিয়ে একাধিক অ্যাকাউন্ট ভেরিফাই করা যাবে না।</span>
+                      </p>
+                      <p className="flex items-start gap-2.5">
+                        <span className="text-[#FFC107]">⚠️</span>
+                        <span>ভুয়া বা সম্পাদিত (এডিট করা) পরিচয়পত্র দিলে অ্যাকাউন্ট স্থায়ীভাবে বন্ধ করা হতে পারে।</span>
+                      </p>
+                      <p className="flex items-start gap-2.5">
+                        <span className="text-[#FFC107]">🔄</span>
+                        <span>KYC একবার অনুমোদিত হলে পরে তথ্য পরিবর্তনের জন্য অতিরিক্ত যাচাই লাগতে পারে।</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* KYC Declaration Checkbox */}
+                  <div 
+                    onClick={() => setKycDeclarationAccepted(!kycDeclarationAccepted)}
+                    className="flex items-start gap-3 p-4 rounded-2xl border bg-amber-50/50 cursor-pointer select-none transition-colors hover:bg-amber-50/70"
+                    style={{ borderColor: kycDeclarationAccepted ? '#FFC107' : '#F1F1F1' }}
+                  >
+                    <button 
+                      type="button" 
+                      className={`w-5 h-5 rounded flex items-center justify-center transition-colors border mt-0.5 shrink-0 ${kycDeclarationAccepted ? 'bg-[#FFC107] border-[#FFC107] text-white' : 'bg-white border-gray-300'}`}
+                    >
+                      {kycDeclarationAccepted && <Check size={14} className="stroke-[3]" />}
+                    </button>
+                    <div>
+                      <h4 className="text-xs font-black text-gray-800">KYC Declaration (ঘোষণা) *</h4>
+                      <p className="text-[11px] font-semibold text-gray-600 mt-1 leading-relaxed">
+                        আমি নিশ্চিত করছি যে, KYC-তে জমা দেওয়া সকল তথ্য সঠিক এবং আমার নিজের। ভুয়া তথ্য, অন্যের পরিচয়পত্র বা জাল নথি ব্যবহার করলে Cash Earn আমার অ্যাকাউন্ট স্থগিত/বাতিল করতে এবং উইথড্র প্রত্যাখ্যান করতে পারবে।
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => setKycStep(3)} 
+                      className="flex-1 h-14 rounded-2xl border-gray-200 text-gray-600 font-black uppercase tracking-wider flex items-center justify-center gap-1.5"
+                    >
+                      <ChevronLeft size={16} />
+                      <span>পেছনে</span>
+                    </Button>
+                    <Button 
+                      onClick={handleKycSubmit} 
+                      isLoading={submittingKyc} 
+                      disabled={!kycDeclarationAccepted}
+                      className={`flex-[2] h-14 rounded-2xl font-black uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5 transition-all ${kycDeclarationAccepted ? 'bg-[#FFC107] text-[#37474F] hover:bg-[#ffca28]' : 'bg-gray-150 text-gray-400 cursor-not-allowed border-none shadow-none'}`}
+                    >
+                      <span>সাবমিট করুন</span>
+                      <ShieldCheck size={18} />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

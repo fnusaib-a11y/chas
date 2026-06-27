@@ -10,6 +10,7 @@ import { Wallet, ShoppingCart, ClipboardList, Users, TrendingUp, Bell, ChevronRi
 import { Card, Button, BannerAdSlot } from '../components/UI';
 import { AppState, UserLevel, AppSettings } from '../types';
 import { dbService } from '../dbService';
+import { ads } from '../lib/ads';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import LootDropSystem from '../components/LootDropSystem';
 import { PromoBannerSlider } from '../components/PromoBannerSlider';
@@ -48,6 +49,10 @@ export default function Dashboard({ state }: { state: AppState }) {
   const [refMessage, setRefMessage] = React.useState('');
   const [refError, setRefError] = React.useState('');
   const [submittingRef, setSubmittingRef] = React.useState(false);
+
+  // Global priority startup notification popup
+  const [showStartPopup, setShowStartPopup] = React.useState(false);
+  const [hasCheckedStartPopup, setHasCheckedStartPopup] = React.useState(false);
 
   const [selectedChannel, setSelectedChannel] = React.useState('featured');
   const [claimingCheckIn, setClaimingCheckIn] = React.useState(false);
@@ -114,6 +119,8 @@ export default function Dashboard({ state }: { state: AppState }) {
       const success = await dbService.claimDailyCheckIn(user);
       if (success) {
         alert('সফলভাবে দৈনিক চেক-ইন বোনাস ৫০ কয়েন (৫ টাকা) আপনার ওয়ালেটে যোগ হয়েছে!');
+        // Show start.io/monetag interstitial ad upon bonus claim
+        ads.showInterstitial(state.settings);
       } else {
         alert('আপনি আজ ইতিমধ্যেই চেক-ইন করেছেন!');
       }
@@ -124,14 +131,32 @@ export default function Dashboard({ state }: { state: AppState }) {
     }
   };
 
+  // Get latest startup priority notice
+  const activeNotice = React.useMemo(() => {
+    const notices = (state.globalNotifications || [])
+      .filter(n => n.showAsPopup === true)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return notices[0];
+  }, [state.globalNotifications]);
+
+  // Handle showing the priority start popup immediately if available
   React.useEffect(() => {
-    if (user && !user.referredBy && (!user.referralStatus || user.referralStatus === 'none') && !user.isAdmin) {
+    if (user && activeNotice && !hasCheckedStartPopup) {
+      setShowStartPopup(true);
+    }
+  }, [user, activeNotice, hasCheckedStartPopup]);
+
+  // Show referral popup only if startup notice is closed or not available
+  React.useEffect(() => {
+    const canShowReferral = !activeNotice || hasCheckedStartPopup;
+
+    if (canShowReferral && user && !user.referredBy && (!user.referralStatus || user.referralStatus === 'none') && !user.isAdmin) {
       const timer = setTimeout(() => {
         setShowReferralPopup(true);
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [user]);
+  }, [user, activeNotice, hasCheckedStartPopup]);
 
   const handleReferralSubmit = async () => {
     if (!referralInput.trim()) {
@@ -376,6 +401,63 @@ export default function Dashboard({ state }: { state: AppState }) {
         </div>
       </div>
       </div>
+
+      {/* Priority Startup Global Notice Popup */}
+      {showStartPopup && activeNotice && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-[32px] max-w-md w-full overflow-hidden shadow-2xl border border-gray-150 flex flex-col my-8"
+          >
+            {/* Image Header if provided */}
+            {activeNotice.imageUrl && (
+              <div className="relative w-full aspect-video bg-gray-100 overflow-hidden select-none shrink-0 border-b border-gray-100">
+                <img 
+                  src={activeNotice.imageUrl} 
+                  alt={activeNotice.title} 
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover" 
+                />
+              </div>
+            )}
+
+            {/* Content Container */}
+            <div className="p-6 flex-1 flex flex-col min-h-0 text-left">
+              {/* Header Icon & Title */}
+              <div className="flex items-start gap-3 mb-4 shrink-0">
+                <div className="w-10 h-10 bg-[#FFC107]/15 rounded-2xl flex items-center justify-center text-[#FFC107] shrink-0">
+                  <Bell size={22} className="animate-bounce" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#37474F] font-sans leading-tight">{activeNotice.title}</h3>
+                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-0.5 font-sans">
+                    {activeNotice.type} NOTICE • {new Date(activeNotice.createdAt).toLocaleDateString('bn-BD')}
+                  </p>
+                </div>
+              </div>
+
+              {/* Notice Message Content - Scrollable if extremely long */}
+              <div className="text-xs text-gray-600 leading-relaxed font-sans max-h-[250px] overflow-y-auto pr-1 select-text space-y-2 whitespace-pre-wrap flex-1 border-y border-gray-100/70 py-3 mb-5">
+                {activeNotice.message}
+              </div>
+
+              {/* Close Action Button */}
+              <div className="shrink-0 pt-1">
+                <Button 
+                  onClick={() => {
+                    setShowStartPopup(false);
+                    setHasCheckedStartPopup(true);
+                  }}
+                  className="w-full h-14 bg-[#FFC107] text-[#37474F] hover:bg-[#e0a800] rounded-2xl font-black uppercase tracking-wider text-xs shadow-lg shadow-[#FFC107]/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <span className="font-sans">ঠিক আছে (Close Notice)</span>
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Referral Entry Popup Modal */}
       {showReferralPopup && (

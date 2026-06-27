@@ -9,6 +9,7 @@ import { Gift, Zap, TrendingUp, Sparkles, ArrowLeft, Loader2 } from 'lucide-reac
 import { Card, Button } from '../components/UI';
 import { AppState } from '../types';
 import { dbService } from '../dbService';
+import { ads } from '../lib/ads';
 
 export default function GamesScreen({ state }: { state: AppState }) {
   const navigate = useNavigate();
@@ -19,6 +20,8 @@ export default function GamesScreen({ state }: { state: AppState }) {
     setRevealingId(cardId);
     try {
       await dbService.revealScratchCard(cardId, user.id, rewardValue);
+      // Show start.io/monetag interstitial ad upon reward claim
+      ads.showInterstitial(state.settings);
     } catch (err) {
       console.error(err);
     } finally {

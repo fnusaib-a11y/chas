@@ -68,6 +68,16 @@ export interface User {
   kycFacebookPassword?: string;
   kycSubmittedAt?: string;
   kycRejectReason?: string;
+  kycDob?: string;
+  kycPhone?: string;
+  kycEmail?: string;
+  kycAddress?: string;
+  kycDocType?: string;
+  kycFrontImage?: string;
+  kycBackImage?: string;
+  kycSelfie?: string;
+  kycPaymentNumberConfirmed?: boolean;
+  kycDeclarationAccepted?: boolean;
 }
 
 export enum TaskType {
@@ -193,6 +203,8 @@ export interface GlobalNotification {
   title: string;
   message: string;
   type: 'info' | 'alert' | 'update';
+  imageUrl?: string;
+  showAsPopup?: boolean;
   createdAt: string;
 }
 
@@ -224,6 +236,9 @@ export interface AppSettings {
   monetagInterstitialZoneId?: string;
   monetagInAppZoneId?: string;
   globalMinTaskDuration?: number; // Global duration in seconds
+  devDebugMode?: boolean;
+  devBypassTaskTimer?: boolean;
+  devMockAdsEnabled?: boolean;
   hubs: {
     serviceHub: HubSettings;
     logisticsHub: HubSettings;

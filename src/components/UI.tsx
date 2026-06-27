@@ -203,3 +203,22 @@ export function Input({ label, placeholder, value, onChange, type = 'text', icon
     </div>
   );
 }
+
+export function Textarea({ label, placeholder, value, onChange, rows = 4, className, ...props }: any) {
+  return (
+    <div className="flex flex-col gap-1.5 w-full">
+      {label && <label className="text-xs font-bold text-gray-500 ml-1">{label}</label>}
+      <div className="relative group">
+        <textarea
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          rows={rows}
+          className={`w-full bg-white border-2 border-gray-100 rounded-xl p-4 outline-none focus:border-[#FFC107] transition-all text-sm resize-y ${className}`}
+          {...props}
+        />
+      </div>
+    </div>
+  );
+}
+
