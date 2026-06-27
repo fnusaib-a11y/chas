@@ -186,17 +186,57 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
 
   const getYoutubeEmbedUrl = (url: string) => {
     if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? `https://www.youtube.com/embed/${match[2]}?autoplay=1&mute=1&enablejsapi=1` : null;
+    let videoId = '';
+    try {
+      const trimmed = url.trim();
+      if (trimmed.includes('youtu.be/')) {
+        const parts = trimmed.split('youtu.be/');
+        if (parts[1]) {
+          videoId = parts[1].split(/[?#]/)[0];
+        }
+      } else if (trimmed.includes('youtube.com/shorts/')) {
+        const parts = trimmed.split('youtube.com/shorts/');
+        if (parts[1]) {
+          videoId = parts[1].split(/[?#/]/)[0];
+        }
+      } else if (trimmed.includes('youtube.com/watch')) {
+        const urlObj = new URL(trimmed);
+        videoId = urlObj.searchParams.get('v') || '';
+      } else if (trimmed.includes('youtube.com/embed/')) {
+        const parts = trimmed.split('youtube.com/embed/');
+        if (parts[1]) {
+          videoId = parts[1].split(/[?#]/)[0];
+        }
+      } else {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+        const match = trimmed.match(regExp);
+        if (match && match[2]) {
+          videoId = match[2];
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    
+    if (videoId) {
+      videoId = videoId.split(/[?#&/]/)[0].trim();
+    }
+    
+    if (videoId && videoId.length === 11) {
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&enablejsapi=1`;
+    }
+    return null;
   };
 
   const getFacebookEmbedUrl = (url: string) => {
     if (!url) return null;
-    if (url.includes('facebook.com') || url.includes('fb.watch') || url.includes('fb.com')) {
-      if (url.includes('/videos/') || url.includes('/watch') || url.includes('fb.watch') || url.includes('/posts/')) {
-        return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=0&width=500`;
-      }
+    const cleanUrl = url.trim();
+    if (
+      cleanUrl.includes('facebook.com') || 
+      cleanUrl.includes('fb.watch') || 
+      cleanUrl.includes('fb.com')
+    ) {
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(cleanUrl)}&show_text=0&width=500`;
     }
     return null;
   };
@@ -316,6 +356,11 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
                     sandbox="allow-scripts allow-same-origin allow-popups"
                   />
                 )}
+              </div>
+              {/* Active Task Banner Ad Slot */}
+              <div className="bg-gray-50 p-4 border-t border-gray-100 flex flex-col items-center justify-center min-h-[60px]">
+                <span className="text-[7px] font-black uppercase text-gray-400 tracking-widest mb-1.5">Sponsored Advertisement</span>
+                <BannerAdSlot state={state} />
               </div>
             </div>
 
