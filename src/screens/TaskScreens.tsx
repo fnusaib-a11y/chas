@@ -168,6 +168,10 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
 
   const checkIsVideoTask = (): boolean => {
     if (!task) return false;
+
+    // 1. Explicit admin/task configuration takes highest precedence
+    const isExplicitVideo = task.type === TaskType.VIDEO || task.category?.toLowerCase() === 'video';
+
     const urlToOpen = (task?.adCode && (task.adCode.startsWith('http') || task.adCode.includes('.'))) ? task.adCode : task?.url;
     const fUrl = urlToOpen ? (urlToOpen.startsWith('http') ? urlToOpen : `https://${urlToOpen}`) : '';
     if (!fUrl) return false;
@@ -175,6 +179,14 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
     const lowercaseUrl = fUrl.toLowerCase();
     const lowercaseTitle = (task.title || '').toLowerCase();
     const lowercaseDesc = (task.description || '').toLowerCase();
+
+    const hasVideoKeywords = 
+      lowercaseTitle.includes('video') || 
+      lowercaseTitle.includes('ভিডিও') || 
+      lowercaseTitle.includes('watch') || 
+      lowercaseTitle.includes('দেখুন') ||
+      lowercaseDesc.includes('video') || 
+      lowercaseDesc.includes('ভিডিও');
 
     // Check if URL points to a channel/profile page instead of a watchable video
     if (
@@ -190,12 +202,12 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
       lowercaseUrl.includes('facebook.com/groups/') ||
       lowercaseUrl.includes('facebook.com/profile.php') ||
       lowercaseUrl.includes('t.me/') ||
-      lowercaseUrl.includes('telegram.org/') ||
-      (lowercaseUrl.includes('facebook.com/') && !lowercaseUrl.includes('/videos/') && !lowercaseUrl.includes('/watch/') && !lowercaseUrl.includes('fb.watch') && !lowercaseUrl.includes('/reel/') && !lowercaseUrl.includes('/share/v/'))
+      lowercaseUrl.includes('telegram.org/')
     ) {
       return false;
     }
 
+    // Check if the URL has clear video signatures
     const hasVideoSignatures = 
       lowercaseUrl.includes('watch?v=') || 
       lowercaseUrl.includes('youtu.be/') || 
@@ -205,13 +217,28 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
       lowercaseUrl.includes('facebook.com/watch') ||
       lowercaseUrl.includes('/videos/') ||
       lowercaseUrl.includes('/reel/') ||
-      lowercaseUrl.includes('facebook.com/share/v/');
+      lowercaseUrl.includes('/share/v/') ||
+      lowercaseUrl.includes('/share/r/') ||
+      lowercaseUrl.includes('facebook.com/share/v/') ||
+      lowercaseUrl.includes('facebook.com/share/r/');
 
     if (hasVideoSignatures) {
       return true;
     }
 
-    if (task.type === TaskType.VIDEO || task.category?.toLowerCase() === 'video') {
+    if (isExplicitVideo) {
+      return true;
+    }
+
+    if (lowercaseUrl.includes('facebook.com/') || lowercaseUrl.includes('fb.com')) {
+      // For general Facebook links, if there's an explicit video keyword in title/desc, treat it as a video task!
+      if (hasVideoKeywords) {
+        return true;
+      }
+      return false;
+    }
+
+    if (hasVideoKeywords) {
       return true;
     }
 
@@ -380,8 +407,7 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
     }
   }, [finalUrl]);
 
-  if (!task) return <div className="p-6 text-center text-gray-500 font-bold uppercase">Task missing</div>;
-  const reward = (task.reward * getLevelMultiplier(user.level)).toFixed(2);
+  const reward = task ? (task.reward * getLevelMultiplier(user.level)).toFixed(2) : '0.00';
 
   const youtubeEmbedUrl = getYoutubeEmbedUrl(resolvedUrlState || finalUrl);
   const facebookEmbedUrl = getFacebookEmbedUrl(resolvedUrlState || finalUrl);
@@ -556,6 +582,10 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
     }
   };
 
+  if (!task) {
+    return <div className="p-6 text-center text-gray-500 font-bold uppercase">Task missing</div>;
+  }
+
   return (
     <div className="min-h-screen bg-[#F5F5F5] flex flex-col">
       <div className="p-6 flex items-center justify-between bg-white shadow-sm">
@@ -643,6 +673,31 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
                       className="w-full h-full border-none absolute inset-0 bg-white"
                       sandbox="allow-scripts allow-same-origin allow-popups"
                     />
+                  )}
+
+                  {/* Visual Progress Bar at the bottom of the video player screen to show watched time & reward countdown */}
+                  {isActive && !isResolvingUrl && (
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-2.5 pt-7 flex items-center justify-between z-20 pointer-events-none font-sans">
+                      <div className="flex items-center gap-1.5">
+                        <div className={`w-2.5 h-2.5 rounded-full flex items-center justify-center ${isVideoPlaying ? 'bg-emerald-500' : 'bg-amber-500 animate-pulse'}`}>
+                          <div className="w-1 h-1 rounded-full bg-white" />
+                        </div>
+                        <span className="text-[10px] font-black text-white tracking-wide uppercase drop-shadow-md">
+                          {isVideoPlaying ? 'Watching & Counting...' : 'Playback Paused'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-[#FFC107] font-mono bg-black/60 px-2 py-0.5 rounded-md backdrop-blur-sm shadow-inner">
+                          {timer > 0 ? `${timer}s left` : 'Finished!'}
+                        </span>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/20">
+                        <div 
+                          className="h-full bg-gradient-to-r from-amber-500 to-[#FFC107] transition-all duration-1000 ease-linear rounded-r-sm"
+                          style={{ width: `${Math.max(0, Math.min(100, initialDuration > 0 ? ((initialDuration - timer) / initialDuration) * 100 : 100))}%` }}
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
               ) : (
