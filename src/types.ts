@@ -78,6 +78,7 @@ export interface User {
   kycSelfie?: string;
   kycPaymentNumberConfirmed?: boolean;
   kycDeclarationAccepted?: boolean;
+  tutorialSeen?: boolean;
 }
 
 export enum TaskType {

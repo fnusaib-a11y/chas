@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Play, Download, HelpCircle, CheckCircle2, Timer, ArrowLeft, ExternalLink, CalendarDays } from 'lucide-react';
+import { Play, Download, HelpCircle, CheckCircle2, Timer, ArrowLeft, ExternalLink, CalendarDays, Send, Instagram, Users } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { Card, Button, BannerAdSlot } from '../components/UI';
 import { AppState, TaskType, UserLevel } from '../types';
@@ -142,37 +142,19 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
   const [isFinished, setIsFinished] = useState(initialDuration === 0);
   const [loading, setLoading] = useState(false);
 
+  // Background Video Tracking State
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+
   // Survey-specific state
   const [surveyAnswers, setSurveyAnswers] = useState<Record<string, string | string[]>>({});
 
-  useEffect(() => {
-    let interval: any;
-    if (isActive && timer > 0) {
-      interval = setInterval(() => {
-        setTimer((t) => t - 1);
-      }, 1000);
-    } else if (timer === 0 && isActive) {
-      setIsFinished(true);
-      setIsActive(false);
-      // Celebrate reaching the end of the timer
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#FFC107', '#37474F', '#4CAF50']
-      });
-      ads.showInterstitial(state.settings);
-    }
-    return () => clearInterval(interval);
-  }, [isActive, timer]);
+  const [resolvedUrlState, setResolvedUrlState] = useState<string>('');
+  const [isResolvingUrl, setIsResolvingUrl] = useState<boolean>(false);
 
-  if (!task) return <div>Task missing</div>;
-  const reward = (task.reward * getLevelMultiplier(user.level)).toFixed(2);
-
-  const hasQuestions = task.questions && task.questions.length > 0;
+  const hasQuestions = task?.questions && task.questions.length > 0;
 
   const isSurveyValid = () => {
-    if (!task.questions || task.questions.length === 0) return true;
+    if (!task || !task.questions || task.questions.length === 0) return true;
     for (const q of task.questions) {
       if (q.required) {
         const ans = surveyAnswers[q.id];
@@ -182,6 +164,124 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
       }
     }
     return true;
+  };
+
+  const checkIsVideoTask = (): boolean => {
+    if (!task) return false;
+    const urlToOpen = (task?.adCode && (task.adCode.startsWith('http') || task.adCode.includes('.'))) ? task.adCode : task?.url;
+    const fUrl = urlToOpen ? (urlToOpen.startsWith('http') ? urlToOpen : `https://${urlToOpen}`) : '';
+    if (!fUrl) return false;
+
+    const lowercaseUrl = fUrl.toLowerCase();
+    const lowercaseTitle = (task.title || '').toLowerCase();
+    const lowercaseDesc = (task.description || '').toLowerCase();
+
+    // Check if URL points to a channel/profile page instead of a watchable video
+    if (
+      lowercaseUrl.includes('youtube.com/channel/') ||
+      lowercaseUrl.includes('youtube.com/c/') ||
+      lowercaseUrl.includes('youtube.com/user/') ||
+      (lowercaseUrl.includes('youtube.com/@') && !lowercaseUrl.includes('/watch') && !lowercaseUrl.includes('/shorts'))
+    ) {
+      return false;
+    }
+
+    if (
+      lowercaseUrl.includes('facebook.com/groups/') ||
+      lowercaseUrl.includes('facebook.com/profile.php') ||
+      lowercaseUrl.includes('t.me/') ||
+      lowercaseUrl.includes('telegram.org/') ||
+      (lowercaseUrl.includes('facebook.com/') && !lowercaseUrl.includes('/videos/') && !lowercaseUrl.includes('/watch/') && !lowercaseUrl.includes('fb.watch') && !lowercaseUrl.includes('/reel/') && !lowercaseUrl.includes('/share/v/'))
+    ) {
+      return false;
+    }
+
+    const hasVideoSignatures = 
+      lowercaseUrl.includes('watch?v=') || 
+      lowercaseUrl.includes('youtu.be/') || 
+      lowercaseUrl.includes('youtube.com/shorts/') ||
+      lowercaseUrl.includes('youtube.com/embed/') ||
+      lowercaseUrl.includes('fb.watch') ||
+      lowercaseUrl.includes('facebook.com/watch') ||
+      lowercaseUrl.includes('/videos/') ||
+      lowercaseUrl.includes('/reel/') ||
+      lowercaseUrl.includes('facebook.com/share/v/');
+
+    if (hasVideoSignatures) {
+      return true;
+    }
+
+    if (task.type === TaskType.VIDEO || task.category?.toLowerCase() === 'video') {
+      return true;
+    }
+
+    return false;
+  };
+
+  const getSocialAction = (url: string, title: string, desc: string) => {
+    const lowercaseUrl = url.toLowerCase();
+    const textToSearch = (title + ' ' + desc).toLowerCase();
+    
+    let platform: 'youtube' | 'facebook' | 'telegram' | 'instagram' | 'tiktok' | 'twitter' | 'other' = 'other';
+    if (lowercaseUrl.includes('youtube.com') || lowercaseUrl.includes('youtu.be')) {
+      platform = 'youtube';
+    } else if (lowercaseUrl.includes('facebook.com') || lowercaseUrl.includes('fb.com') || lowercaseUrl.includes('fb.watch')) {
+      platform = 'facebook';
+    } else if (lowercaseUrl.includes('t.me') || lowercaseUrl.includes('telegram')) {
+      platform = 'telegram';
+    } else if (lowercaseUrl.includes('instagram.com')) {
+      platform = 'instagram';
+    } else if (lowercaseUrl.includes('tiktok.com')) {
+      platform = 'tiktok';
+    } else if (lowercaseUrl.includes('twitter.com') || lowercaseUrl.includes('x.com')) {
+      platform = 'twitter';
+    }
+
+    let actionType: 'subscribe' | 'follow' | 'like' | 'join' | 'visit' = 'visit';
+    if (textToSearch.includes('subscribe') || textToSearch.includes('সাবস্ক্রাইব') || textToSearch.includes('sub')) {
+      actionType = 'subscribe';
+    } else if (textToSearch.includes('follow') || textToSearch.includes('ফলো')) {
+      actionType = 'follow';
+    } else if (textToSearch.includes('like') || textToSearch.includes('লাইক')) {
+      actionType = 'like';
+    } else if (textToSearch.includes('join') || textToSearch.includes('জয়েন') || textToSearch.includes('গ্রুপ') || textToSearch.includes('group') || textToSearch.includes('channel')) {
+      actionType = 'join';
+    }
+
+    let titleBn = "লিংক ভিজিট করুন";
+    let descBn = "দয়া করে নিচের লিংকে ক্লিক করে আমাদের সাইটটি ভিজিট করুন এবং কাউন্টডাউন শেষ হওয়া পর্যন্ত অপেক্ষা করুন।";
+
+    if (platform === 'youtube') {
+      if (actionType === 'subscribe') {
+        titleBn = "ইউটিউব চ্যানেল সাবস্ক্রাইব করুন";
+        descBn = "নিচের বাটনে ক্লিক করে আমাদের ইউটিউব চ্যানেলে যান, চ্যানেলটি সাবস্ক্রাইব করুন এবং বেল আইকনটি অন করুন। তারপর ফিরে এসে রিওয়ার্ড দাবি করুন।";
+      } else {
+        titleBn = "ইউটিউব ভিডিও দেখুন";
+        descBn = "ভিডিওটি সম্পূর্ণ দেখুন এবং কাউন্টডাউন শেষ হওয়া পর্যন্ত অপেক্ষা করুন।";
+      }
+    } else if (platform === 'facebook') {
+      if (actionType === 'follow' || actionType === 'like') {
+        titleBn = "ফেসবুক পেজ লাইক ও ফলো করুন";
+        descBn = "নিচের বাটনে ক্লিক করে আমাদের ফেসবুক পেজে যান, পেজটি লাইক এবং ফলো করুন। তারপর ফিরে এসে রিওয়ার্ড দাবি করুন।";
+      } else {
+        titleBn = "ফেসবুক ভিডিও দেখুন";
+        descBn = "ভিডিওটি সম্পূর্ণ দেখুন এবং কাউন্টডাউন শেষ হওয়া পর্যন্ত অপেক্ষা করুন।";
+      }
+    } else if (platform === 'telegram') {
+      titleBn = "টেলিগ্রাম চ্যানেলে জয়েন করুন";
+      descBn = "নিচের বাটনে ক্লিক করে আমাদের টেলিগ্রাম চ্যানেলে জয়েন করুন এবং জয়েন করা শেষ হলে এই এপে এসে রিওয়ার্ড দাবি করুন।";
+    } else if (platform === 'instagram') {
+      titleBn = "ইনস্টাগ্রাম প্রোফাইল ফলো করুন";
+      descBn = "নিচের বাটনে ক্লিক করে আমাদের ইনস্টাগ্রাম প্রোফাইলে যান এবং ফলো করুন। তারপর ফিরে এসে রিওয়ার্ড দাবি করুন।";
+    } else if (platform === 'tiktok') {
+      titleBn = "টিকটক আইডি ফলো করুন";
+      descBn = "নিচের বাটনে ক্লিক করে আমাদের টিকটক আইডিতে যান এবং ফলো করুন। তারপর ফিরে এসে রিওয়ার্ড দাবি করুন।";
+    } else if (platform === 'twitter') {
+      titleBn = "টুইটার/X প্রোফাইল ফলো করুন";
+      descBn = "নিচের বাটনে ক্লিক করে আমাদের টুইটার প্রোফাইলে যান এবং ফলো করুন। তারপর ফিরে এসে রিওয়ার্ড দাবি করুন।";
+    }
+
+    return { platform, actionType, titleBn, descBn };
   };
 
   const getYoutubeEmbedUrl = (url: string) => {
@@ -230,23 +330,183 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
 
   const getFacebookEmbedUrl = (url: string) => {
     if (!url) return null;
-    const cleanUrl = url.trim();
+    let cleanUrl = url.trim();
     if (
       cleanUrl.includes('facebook.com') || 
       cleanUrl.includes('fb.watch') || 
       cleanUrl.includes('fb.com')
     ) {
-      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(cleanUrl)}&show_text=0&width=500`;
+      // Normalize mobile or other subdomains to www to prevent iframe loading issues
+      cleanUrl = cleanUrl
+        .replace(/(m|touch|web|business)\.facebook\.com/, 'www.facebook.com')
+        .replace(/fb\.com/, 'facebook.com');
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(cleanUrl)}&show_text=0&width=500&autoplay=true`;
     }
     return null;
   };
 
-  const urlToOpen = (task.adCode && (task.adCode.startsWith('http') || task.adCode.includes('.'))) ? task.adCode : task.url;
+  const urlToOpen = (task?.adCode && (task.adCode.startsWith('http') || task.adCode.includes('.'))) ? task.adCode : task?.url;
   const finalUrl = urlToOpen ? (urlToOpen.startsWith('http') ? urlToOpen : `https://${urlToOpen}`) : '';
-  const isUrlAlreadyCompleted = (state.taskLogs || []).some(log => log.taskId === task.id && log.status !== 'rejected');
-  const youtubeEmbedUrl = getYoutubeEmbedUrl(finalUrl);
-  const facebookEmbedUrl = getFacebookEmbedUrl(finalUrl);
+  const isUrlAlreadyCompleted = (state.taskLogs || []).some(log => log.taskId === task?.id && log.status !== 'rejected');
+
+  useEffect(() => {
+    if (!finalUrl) return;
+    
+    // Check if the URL needs backend resolution
+    // We EXCLUDE youtube.com/shorts and youtu.be as they can be parsed instantly client-side without risk of cloud IP blockage.
+    const isFacebookShortOrShare = finalUrl.includes('fb.watch') || finalUrl.includes('facebook.com/share') || finalUrl.includes('fb.com');
+    
+    if (isFacebookShortOrShare) {
+      setIsResolvingUrl(true);
+      fetch(`/api/resolve-url?url=${encodeURIComponent(finalUrl)}`)
+        .then(res => res.json())
+        .then(data => {
+          // If the resolved URL points to a login wall, fallback to original to avoid a blank screen
+          if (data.resolvedUrl && !data.resolvedUrl.includes('login') && !data.resolvedUrl.includes('checkpoint')) {
+            setResolvedUrlState(data.resolvedUrl);
+          } else {
+            setResolvedUrlState(finalUrl);
+          }
+        })
+        .catch(err => {
+          console.error("Error resolving URL:", err);
+          setResolvedUrlState(finalUrl);
+        })
+        .finally(() => {
+          setIsResolvingUrl(false);
+        });
+    } else {
+      setResolvedUrlState(finalUrl);
+    }
+  }, [finalUrl]);
+
+  if (!task) return <div className="p-6 text-center text-gray-500 font-bold uppercase">Task missing</div>;
+  const reward = (task.reward * getLevelMultiplier(user.level)).toFixed(2);
+
+  const youtubeEmbedUrl = getYoutubeEmbedUrl(resolvedUrlState || finalUrl);
+  const facebookEmbedUrl = getFacebookEmbedUrl(resolvedUrlState || finalUrl);
   const hasEmbed = !!(youtubeEmbedUrl || facebookEmbedUrl);
+
+  const isVideoTask = checkIsVideoTask();
+
+  // Tab visibility check to pause timer when user exits/hides the tab
+  useEffect(() => {
+    if (!isActive) return;
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        setIsVideoPlaying(false);
+      } else {
+        // If it's a non-video task, resume automatic counting
+        if (!isVideoTask) {
+          setIsVideoPlaying(true);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [isActive, isVideoTask]);
+
+  // YouTube API Integration for exact watch tracking
+  useEffect(() => {
+    if (!isActive) {
+      setIsVideoPlaying(false);
+      return;
+    }
+
+    if (!isVideoTask) {
+      setIsVideoPlaying(true);
+      return;
+    }
+
+    const isYoutube = !!youtubeEmbedUrl;
+    if (!isYoutube) {
+      // For Facebook or other non-youtube videos, start as active by default, but subject to tab visibility
+      setIsVideoPlaying(true);
+      return;
+    }
+
+    let player: any = null;
+
+    const setupPlayer = () => {
+      try {
+        if ((window as any).YT && (window as any).YT.Player) {
+          player = new (window as any).YT.Player('youtube-task-player', {
+            events: {
+              onStateChange: (event: any) => {
+                // YT.PlayerState: PLAYING = 1, PAUSED = 2, ENDED = 0, BUFFERING = 3
+                if (event.data === 1) {
+                  setIsVideoPlaying(true);
+                } else if (event.data === 2 || event.data === 0 || event.data === 3) {
+                  setIsVideoPlaying(false);
+                }
+              }
+            }
+          });
+        }
+      } catch (err) {
+        console.error("Error setting up YouTube player tracking:", err);
+      }
+    };
+
+    // Load API dynamically if needed
+    if (!(window as any).YT) {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag?.parentNode?.insertBefore(tag, firstScriptTag);
+      
+      (window as any).onYouTubeIframeAPIReady = () => {
+        setupPlayer();
+      };
+    } else {
+      setupPlayer();
+    }
+
+    // Set fallback: if YouTube API is blocked/failing to initialize after 7 seconds, 
+    // let user watch by default (so they don't get stuck)
+    const fallbackTimeout = setTimeout(() => {
+      if (!player) {
+        console.warn("YouTube Player API not responding, falling back to basic active timing");
+        setIsVideoPlaying(true);
+      }
+    }, 7000);
+
+    return () => {
+      clearTimeout(fallbackTimeout);
+      if (player && typeof player.destroy === 'function') {
+        try {
+          player.destroy();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    };
+  }, [isActive, isVideoTask, youtubeEmbedUrl]);
+
+  useEffect(() => {
+    let interval: any;
+    if (isActive && !isResolvingUrl && isVideoPlaying && timer > 0) {
+      interval = setInterval(() => {
+        setTimer((t) => t - 1);
+      }, 1000);
+    } else if (timer === 0 && isActive) {
+      setIsFinished(true);
+      setIsActive(false);
+      // Celebrate reaching the end of the timer
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#FFC107', '#37474F', '#4CAF50']
+      });
+      ads.showInterstitial(state.settings);
+    }
+    return () => clearInterval(interval);
+  }, [isActive, isResolvingUrl, isVideoPlaying, timer]);
 
   const startTask = () => {
     // libtl ad trigger
@@ -258,10 +518,12 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
       console.warn('Ad SDK error', e);
     }
 
-    // Instead of forcing window.open and redirecting user out of the app, 
-    // we now activate the premium in-app web browser frame!
     setIsActive(true);
     ads.showInterstitial(state.settings);
+
+    if (!isVideoTask && finalUrl) {
+      window.open(finalUrl, '_blank');
+    }
   };
 
   const handleComplete = async () => {
@@ -302,6 +564,11 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
         <div className="w-12 text-[#FFC107] font-black">৳{reward}</div>
       </div>
 
+      {/* Top premium ad slot */}
+      <div className="bg-white border-b border-gray-100 px-6 py-2 flex flex-col items-center justify-center">
+        <BannerAdSlot state={state} />
+      </div>
+
       <div className="flex-1 p-6 py-10 flex flex-col items-center text-center space-y-8">
         {isActive && finalUrl ? (
           <div className="w-full space-y-4 animate-in fade-in zoom-in duration-300 text-left">
@@ -331,32 +598,96 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
               </div>
 
               {/* Viewport Box */}
-              <div className="relative aspect-video w-full bg-gray-950 overflow-hidden flex flex-col items-center justify-center border-b border-gray-100">
-                {youtubeEmbedUrl ? (
-                  <iframe
-                    title="YouTube Task Video"
-                    src={youtubeEmbedUrl}
-                    className="w-full h-full border-none absolute inset-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                  />
-                ) : facebookEmbedUrl ? (
-                  <iframe
-                    title="Facebook Task Video"
-                    src={facebookEmbedUrl}
-                    className="w-full h-full border-none absolute inset-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                  />
-                ) : (
-                  <iframe
-                    title="In-App Web Task View"
-                    src={finalUrl}
-                    className="w-full h-full border-none absolute inset-0 bg-white"
-                    sandbox="allow-scripts allow-same-origin allow-popups"
-                  />
-                )}
-              </div>
+              {isVideoTask ? (
+                <div className="relative aspect-video w-full bg-gray-950 overflow-hidden flex flex-col items-center justify-center border-b border-gray-100">
+                  {isResolvingUrl ? (
+                    <div className="flex flex-col items-center justify-center space-y-3 p-6 text-center">
+                      <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                      <p className="text-xs font-black uppercase tracking-widest text-amber-400">Loading Video Player...</p>
+                      <p className="text-[10px] text-gray-500 font-bold max-w-xs uppercase">Bypassing iframe blocks & securing server connection...</p>
+                    </div>
+                  ) : youtubeEmbedUrl ? (
+                    <>
+                      <iframe
+                        id="youtube-task-player"
+                        title="YouTube Task Video"
+                        src={youtubeEmbedUrl}
+                        className="w-full h-full border-none absolute inset-0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                      />
+                      {/* Active status indicator overlay */}
+                      {!isVideoPlaying ? (
+                        <div className="absolute top-2 left-2 right-2 bg-red-600/90 text-white text-[9px] font-bold py-1.5 px-3 rounded-lg shadow-md flex items-center gap-1.5 z-20 pointer-events-none font-sans justify-center">
+                          <span>⚠️ ভিডিওটি প্লে করুন! (ভিডিও না দেখলে কাউন্টডাউন শুরু হবে না)</span>
+                        </div>
+                      ) : (
+                        <div className="absolute top-2 left-2 right-2 bg-emerald-600/90 text-white text-[9px] font-bold py-1.5 px-3 rounded-lg shadow-md flex items-center gap-1.5 z-20 pointer-events-none font-sans justify-center">
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                          <span>✅ ভিডিও দেখছেন... এপের ভেতরেই থাকুন</span>
+                        </div>
+                      )}
+                    </>
+                  ) : facebookEmbedUrl ? (
+                    <iframe
+                      title="Facebook Task Video"
+                      src={facebookEmbedUrl}
+                      className="w-full h-full border-none absolute inset-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <iframe
+                      title="In-App Web Task View"
+                      src={finalUrl}
+                      className="w-full h-full border-none absolute inset-0 bg-white"
+                      sandbox="allow-scripts allow-same-origin allow-popups"
+                    />
+                  )}
+                </div>
+              ) : (
+                /* Non-Video Task Instructions Box (Subscribe / Follow / Like / Join) */
+                <div className="p-6 md:p-8 bg-gradient-to-b from-gray-50 to-white flex flex-col items-center justify-center text-center space-y-6 border-b border-gray-100">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-[#FFC107]">
+                      {getSocialAction(finalUrl, task.title, task.description).platform === 'youtube' && <Play size={28} className="text-red-500" />}
+                      {getSocialAction(finalUrl, task.title, task.description).platform === 'facebook' && <Users size={28} className="text-blue-600" />}
+                      {getSocialAction(finalUrl, task.title, task.description).platform === 'telegram' && <Send size={28} className="text-sky-500" />}
+                      {getSocialAction(finalUrl, task.title, task.description).platform === 'instagram' && <Instagram size={28} className="text-pink-500" />}
+                      {getSocialAction(finalUrl, task.title, task.description).platform === 'tiktok' && <Play size={28} className="text-purple-600 animate-pulse" />}
+                      {getSocialAction(finalUrl, task.title, task.description).platform === 'twitter' && <ExternalLink size={28} className="text-blue-400" />}
+                      {getSocialAction(finalUrl, task.title, task.description).platform === 'other' && <ExternalLink size={28} className="text-amber-500" />}
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 bg-green-500 text-white rounded-full p-1 border-2 border-white">
+                      <CheckCircle2 size={12} />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 max-w-md">
+                    <h4 className="text-sm font-black text-gray-800 font-sans">
+                      {getSocialAction(finalUrl, task.title, task.description).titleBn}
+                    </h4>
+                    <p className="text-xs text-gray-600 font-bold leading-relaxed font-sans px-2">
+                      {getSocialAction(finalUrl, task.title, task.description).descBn}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => window.open(finalUrl, '_blank')}
+                    className="px-6 py-3 bg-[#FFC107] hover:bg-amber-400 text-[#37474F] font-black text-xs uppercase tracking-wider rounded-2xl shadow-md transition-all active:scale-95 flex items-center gap-2"
+                  >
+                    <ExternalLink size={14} />
+                    <span>
+                      {getSocialAction(finalUrl, task.title, task.description).platform === 'youtube' && 'ইউটিউব চ্যানেল ওপেন করুন (Open Youtube)'}
+                      {getSocialAction(finalUrl, task.title, task.description).platform === 'facebook' && 'ফেসবুক পেজ ওপেন করুন (Open Facebook)'}
+                      {getSocialAction(finalUrl, task.title, task.description).platform === 'telegram' && 'টেলিগ্রাম ওপেন করুন (Open Telegram)'}
+                      {getSocialAction(finalUrl, task.title, task.description).platform === 'instagram' && 'ইনস্টাগ্রাম ওপেন করুন (Open Instagram)'}
+                      {getSocialAction(finalUrl, task.title, task.description).platform === 'tiktok' && 'টিকটক ওপেন করুন (Open TikTok)'}
+                      {getSocialAction(finalUrl, task.title, task.description).platform === 'other' && 'লিংক ওপেন করুন (Open Link)'}
+                    </span>
+                  </button>
+                </div>
+              )}
               {/* Active Task Banner Ad Slot */}
               <div className="bg-gray-50 p-4 border-t border-gray-100 flex flex-col items-center justify-center min-h-[60px]">
                 <span className="text-[7px] font-black uppercase text-gray-400 tracking-widest mb-1.5">Sponsored Advertisement</span>
@@ -367,9 +698,9 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
             {/* In-app guidelines */}
             <div className="bg-amber-50 border border-amber-200/30 p-3.5 rounded-2xl space-y-1">
               <p className="text-[11px] font-bold text-amber-800 flex items-center gap-1.5 leading-relaxed">
-                💡 <b>পরামর্শ:</b> পেজ বা ভিডিওটি এপের ভেতরেই দেখুন এবং সময় শেষ হওয়া পর্যন্ত অপেক্ষা করুন।
+                💡 <b>পরামর্শ:</b> {isVideoTask ? 'পেজ বা ভিডিওটি এপের ভেতরেই দেখুন এবং সময় শেষ হওয়া পর্যন্ত অপেক্ষা করুন।' : 'নিচের বাটনে ক্লিক করে সোশ্যাল অ্যাকাউন্টটি সাবস্ক্রাইব/ফলো করুন এবং টাইম কাউন্টডাউন শেষ হওয়া পর্যন্ত অপেক্ষা করুন।'}
               </p>
-              {!youtubeEmbedUrl && !facebookEmbedUrl && (
+              {!youtubeEmbedUrl && !facebookEmbedUrl && isVideoTask && (
                 <p className="text-[10px] text-amber-700 font-medium leading-relaxed">
                   যদি সাইটটি এখানে পুরোপুরি লোড না হয়, তবে উপরের <b>"Direct Open"</b> বাটনে চাপ দিয়ে সরাসরি দেখে আসুন, তবে এপটি ব্যাকগ্রাউন্ড থেকে সরাবেন না।
                 </p>
@@ -420,6 +751,15 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
               </svg>
               <span className="absolute text-2xl font-black text-[#37474F]">{timer}s</span>
             </div>
+            {isActive && (
+              <div className="mt-2 text-[8px] font-black uppercase tracking-wider text-center z-10 font-sans">
+                {isVideoPlaying ? (
+                  <span className="text-emerald-500 animate-pulse">● Active & Watching</span>
+                ) : (
+                  <span className="text-amber-500">⚠️ Video Paused / Hidden</span>
+                )}
+              </div>
+            )}
             {isActive && (
               <div className="absolute bottom-0 left-0 h-1 bg-[#FFC107] transition-all duration-1000" style={{ width: `${(timer / (initialDuration || 1)) * 100}%` }} />
             )}
@@ -522,12 +862,17 @@ const TaskDetail = ({ state, onComplete }: { state: AppState; onComplete: () => 
         )}
 
         <div className="bg-orange-50 p-6 rounded-2xl w-full border border-orange-100 text-left space-y-3">
-          <h4 className="text-orange-800 font-bold text-sm uppercase">Instructions:</h4>
-          <ul className="text-xs text-orange-700/80 font-medium space-y-2">
-            <li>1. Tap "Start Task" to begin.</li>
-            {initialDuration > 0 && <li>2. Wait for the timer to reach 0 seconds.</li>}
-            {hasQuestions && <li>3. Fill in all survey questions properly.</li>}
-            <li>4. Click "Claim Reward" once finished.</li>
+          <h4 className="text-orange-800 font-bold text-sm uppercase">Instructions / নিয়মাবলী:</h4>
+          <ul className="text-xs text-orange-700/80 font-medium space-y-2 font-sans">
+            <li>১. কাজ শুরু করতে নিচের <b>"Start Task"</b> বাটনে চাপ দিন।</li>
+            {isVideoTask ? (
+              <li>২. ভিডিওটি সম্পূর্ণ দেখুন এবং এপের ভেতরেই থাকুন।</li>
+            ) : (
+              <li>২. সোশ্যাল মিডিয়া লিংকে গিয়ে সাবস্ক্রাইব, লাইক বা ফলো সম্পন্ন করুন।</li>
+            )}
+            {initialDuration > 0 && <li>৩. টাইমার কাউন্টডাউন শেষ হওয়া পর্যন্ত অপেক্ষা করুন (কমপক্ষে {initialDuration} সেকেন্ড)।</li>}
+            {hasQuestions && <li>৪. সার্ভের প্রশ্নগুলোর সঠিক উত্তর দিন।</li>}
+            <li>৫. কাজ শেষ হলে <b>"Claim Reward"</b> বাটনে ক্লিক করে বোনাস বুঝে নিন।</li>
           </ul>
         </div>
 

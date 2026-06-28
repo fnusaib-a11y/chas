@@ -3313,9 +3313,10 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                         });
                       }}
                     >
-                      <option value={TaskType.LINK}>Link</option>
-                      <option value={TaskType.INSTALL}>Install</option>
-                      <option value={TaskType.SURVEY}>Survey</option>
+                      <option value={TaskType.LINK}>Link (লিংক ভিজিট)</option>
+                      <option value={TaskType.INSTALL}>Install (অ্যাপ ইনস্টল)</option>
+                      <option value={TaskType.SURVEY}>Survey (সার্ভে কাজ)</option>
+                      <option value={TaskType.VIDEO}>Video (ভিডিও ভিউ)</option>
                     </select>
                   </div>
                   <div className="flex flex-col gap-1.5 w-full">

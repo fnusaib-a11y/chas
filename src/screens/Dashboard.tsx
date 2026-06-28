@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Wallet, ShoppingCart, ClipboardList, Users, TrendingUp, Bell, ChevronRight, Zap, Play, Download, HelpCircle, ExternalLink, Award, Trophy, MessageSquare, RefreshCw, Bot, Sparkles, Film, Gem, Target, Eye, Briefcase, Brain, User, Clock, Truck, GraduationCap, Cpu, Wrench, Flame, Globe } from 'lucide-react';
 import { Card, Button, BannerAdSlot } from '../components/UI';
 import { AppState, UserLevel, AppSettings } from '../types';
@@ -14,6 +14,7 @@ import { ads } from '../lib/ads';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import LootDropSystem from '../components/LootDropSystem';
 import { PromoBannerSlider } from '../components/PromoBannerSlider';
+import TutorialOverlay from '../components/TutorialOverlay';
 
 const levelInfo = {
   [UserLevel.BEGINNER]: { name: 'Beginner', color: '#B0BEC5', tasksNeeded: 0, referralsNeeded: 0, rewards: '1x Earning' },
@@ -53,6 +54,10 @@ export default function Dashboard({ state }: { state: AppState }) {
   // Global priority startup notification popup
   const [showStartPopup, setShowStartPopup] = React.useState(false);
   const [hasCheckedStartPopup, setHasCheckedStartPopup] = React.useState(false);
+
+  // Tutorial Walkthrough State
+  const [showTutorial, setShowTutorial] = React.useState(false);
+  const [hasCheckedTutorial, setHasCheckedTutorial] = React.useState(false);
 
   const [selectedChannel, setSelectedChannel] = React.useState('featured');
   const [claimingCheckIn, setClaimingCheckIn] = React.useState(false);
@@ -158,6 +163,18 @@ export default function Dashboard({ state }: { state: AppState }) {
     }
   }, [user, activeNotice, hasCheckedStartPopup]);
 
+  // Show tutorial popup if user hasn't seen it and after priority notices
+  React.useEffect(() => {
+    const canShowTutorial = !activeNotice || hasCheckedStartPopup;
+    if (canShowTutorial && user && !user.tutorialSeen && !hasCheckedTutorial) {
+      const timer = setTimeout(() => {
+        setShowTutorial(true);
+        setHasCheckedTutorial(true);
+      }, 2500); // Delay slightly so popups don't clash
+      return () => clearTimeout(timer);
+    }
+  }, [user, activeNotice, hasCheckedStartPopup, hasCheckedTutorial]);
+
   const handleReferralSubmit = async () => {
     if (!referralInput.trim()) {
       setRefError('দয়া করে একটু রেফারেল কোড লিখুন।');
@@ -218,6 +235,10 @@ export default function Dashboard({ state }: { state: AppState }) {
                 <span>🔥</span>
                 <span>{(user.streak || 3)} Streak</span>
              </div>
+             
+             <button onClick={() => setShowTutorial(true)} className="w-9 h-9 rounded-xl border border-white/40 flex items-center justify-center bg-white/20 text-[#37474F] shadow-sm active:scale-95 transition-transform" title="Tutorial Walkthrough">
+                <HelpCircle size={16} />
+             </button>
              
              <button onClick={() => navigate('/profile')} className="w-9 h-9 rounded-xl border border-white/40 flex items-center justify-center bg-white/20 text-[#37474F] shadow-sm active:scale-95 transition-transform">
                 <User size={16} />
@@ -519,6 +540,15 @@ export default function Dashboard({ state }: { state: AppState }) {
           </motion.div>
         </div>
       )}
+      {/* Tutorial Walkthrough Overlay */}
+      <AnimatePresence>
+        {showTutorial && (
+          <TutorialOverlay 
+            state={state} 
+            onClose={() => setShowTutorial(false)} 
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
