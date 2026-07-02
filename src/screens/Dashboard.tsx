@@ -61,10 +61,11 @@ export default function Dashboard({ state }: { state: AppState }) {
 
   const [selectedChannel, setSelectedChannel] = React.useState('featured');
   const [claimingCheckIn, setClaimingCheckIn] = React.useState(false);
+  const [showStreakNotification, setShowStreakNotification] = React.useState(false);
 
   const enabledTabs = React.useMemo(() => {
-    return (state.settings.coinTabs || []).filter(tab => tab.enabled !== false);
-  }, [state.settings.coinTabs]);
+    return (state.settings?.coinTabs || []).filter(tab => tab.enabled !== false);
+  }, [state.settings?.coinTabs]);
 
   const [activeTab, setActiveTab] = React.useState<string>('');
 
@@ -124,6 +125,7 @@ export default function Dashboard({ state }: { state: AppState }) {
       const success = await dbService.claimDailyCheckIn(user);
       if (success) {
         alert('সফলভাবে দৈনিক চেক-ইন বোনাস ৫০ কয়েন (৫ টাকা) আপনার ওয়ালেটে যোগ হয়েছে!');
+        setShowStreakNotification(false);
         // Show start.io/monetag interstitial ad upon bonus claim
         ads.showInterstitial(state.settings);
       } else {
@@ -175,6 +177,20 @@ export default function Dashboard({ state }: { state: AppState }) {
     }
   }, [user, activeNotice, hasCheckedStartPopup, hasCheckedTutorial]);
 
+  // Show local push notification when daily check-in is ready
+  React.useEffect(() => {
+    if (user && !hasCheckedInToday()) {
+      const timer = setTimeout(() => {
+        setShowStreakNotification(true);
+        if (user.soundEnabled !== false) {
+          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2019/2019-preview.mp3');
+          audio.play().catch(() => {});
+        }
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [user?.lastCheckIn]);
+
   const handleReferralSubmit = async () => {
     if (!referralInput.trim()) {
       setRefError('দয়া করে একটু রেফারেল কোড লিখুন।');
@@ -209,6 +225,58 @@ export default function Dashboard({ state }: { state: AppState }) {
 
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Local Push Notification Alert */}
+      <AnimatePresence>
+        {showStreakNotification && !hasCheckedInToday() && (
+          <motion.div
+            initial={{ opacity: 0, y: -80, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -30, scale: 0.95 }}
+            transition={{ type: 'spring', damping: 15 }}
+            className="fixed top-4 left-4 right-4 z-50 max-w-sm mx-auto pointer-events-auto"
+          >
+            <div className="bg-[#1e1e24] text-white p-4 rounded-3xl shadow-2xl border border-amber-500/30 flex gap-3 items-start relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-amber-500 via-orange-500 to-red-500" />
+              
+              <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 mt-1">
+                <Bell size={20} className="animate-bounce" />
+              </div>
+
+              <div className="flex-1 min-w-0 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Local Notification</span>
+                  <button 
+                    onClick={() => setShowStreakNotification(false)}
+                    className="text-slate-400 hover:text-white text-xs font-bold px-1.5 py-0.5 rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <h4 className="text-xs font-black text-white leading-tight">ডেইলি চেক-ইন বোনাস রেডি! 🔥</h4>
+                <p className="text-[10px] text-slate-300 font-medium leading-relaxed">
+                  আপনার {(user.streak || 3)} দিনের স্ট্রিক বোনাস ৫০ কয়েন সংগ্রহ করতে এখানে ট্যাপ করুন।
+                </p>
+                
+                <div className="flex items-center gap-2 pt-2">
+                  <button
+                    onClick={handleDailyCheckIn}
+                    className="bg-amber-500 hover:bg-amber-400 text-black text-[9px] font-black uppercase px-3 py-1.5 rounded-xl transition-colors"
+                  >
+                    Claim Now 🪙
+                  </button>
+                  <button
+                    onClick={() => setShowStreakNotification(false)}
+                    className="text-slate-400 hover:text-slate-300 text-[9px] font-black uppercase px-2 py-1.5 rounded-xl border border-slate-700 hover:bg-slate-800 transition-colors"
+                  >
+                    Later
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <LootDropSystem state={state} />
       {/* Sleek Premium Header Section */}
       <div className="bg-[#FFC107] p-6 pb-24 rounded-b-[40px] relative shadow-lg">
@@ -285,6 +353,45 @@ export default function Dashboard({ state }: { state: AppState }) {
           <PromoBannerSlider banners={state.promoBanners} />
         )}
 
+        {/* Prominent High-Attention Streak Ready Banner */}
+        {!hasCheckedInToday() && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-gradient-to-r from-red-500 via-orange-500 to-amber-500 p-[2px] rounded-[32px] shadow-lg shadow-orange-500/20"
+          >
+            <div className="bg-white p-5 rounded-[30px] flex items-center justify-between relative overflow-hidden">
+              {/* Animated glowing circles */}
+              <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-orange-500/10 rounded-full blur-xl animate-pulse pointer-events-none" />
+              <div className="absolute -left-6 -top-6 w-20 h-20 bg-amber-500/10 rounded-full blur-xl animate-pulse pointer-events-none" />
+
+              <div className="space-y-2 max-w-[70%] z-10">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] font-black bg-orange-500 text-white px-2 py-0.5 rounded-full uppercase tracking-widest animate-pulse font-sans">
+                    Bonus Ready!
+                  </span>
+                  <span className="text-[10px] font-black text-orange-500 font-sans">🔥 {(user.streak || 3)} Day Streak</span>
+                </div>
+                <h4 className="text-xs font-black text-slate-800 uppercase tracking-wide leading-tight">আপনার ডেইলি বোনাস রেডি!</h4>
+                <p className="text-[9px] text-slate-500 font-bold leading-normal">
+                  ৫০ টি কয়েন এখনই সংগ্রহ করুন এবং আপনার Daily Streak বজায় রাখুন।
+                </p>
+                <button 
+                  onClick={handleDailyCheckIn}
+                  disabled={claimingCheckIn}
+                  className="bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2.5 text-[10px] font-black uppercase rounded-xl shadow-lg shadow-orange-500/25 hover:brightness-105 active:scale-95 transition-all font-sans"
+                >
+                  {claimingCheckIn ? 'সংগ্রহ করা হচ্ছে...' : 'কয়েন সংগ্রহ করুন 🪙'}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-center p-4 rounded-2xl bg-orange-500/10 text-orange-500 border border-orange-200 animate-bounce z-10">
+                <Flame size={32} fill="currentColor" />
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Streak Check-In Card */}
         <div className="bg-white border border-slate-100 p-5 rounded-[32px] shadow-sm flex items-center justify-between relative overflow-hidden">
           <div className="space-y-2 max-w-[70%] z-10">
@@ -310,11 +417,51 @@ export default function Dashboard({ state }: { state: AppState }) {
           </div>
         </div>
 
+        {/* Passive Mining System Promo Card */}
+        <div className="bg-white border border-slate-100 p-5 rounded-[32px] shadow-sm flex items-center justify-between relative overflow-hidden">
+          <div className="space-y-2 max-w-[70%] z-10">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-black text-[#D4AF37] uppercase tracking-wider font-sans">Passive Coin Mining</span>
+              {user?.isMiningActive && (
+                <span className="text-[8px] font-black bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded-full uppercase tracking-widest animate-pulse">
+                  Active
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] text-slate-600 font-bold leading-normal font-sans">
+              আলাদা কোনো কাজ ছাড়াই অটোমেটিক কয়েন আয় করুন প্রতি সেকেন্ডে!
+            </p>
+            <button 
+              onClick={() => navigate('/mining')}
+              className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2.5 text-[10px] font-black uppercase rounded-xl shadow-lg shadow-amber-500/10 hover:brightness-105 active:scale-95 transition-all font-sans"
+            >
+              {user?.isMiningActive ? 'মাইনিং ড্যাশবোর্ড' : 'মাইনিং শুরু করুন'}
+            </button>
+          </div>
+          
+          <div 
+            onClick={() => navigate('/mining')}
+            className="flex items-center justify-center p-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-300/30 cursor-pointer hover:scale-105 active:scale-95 transition-all z-10 relative"
+          >
+            {user?.isMiningActive ? (
+              <motion.span
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
+                className="text-3xl inline-block"
+              >
+                ⛏️
+              </motion.span>
+            ) : (
+              <span className="text-3xl filter grayscale inline-block">⛏️</span>
+            )}
+          </div>
+        </div>
+
         {/* Earning Channels (Extremely Responsive Grid) */}
         <div className="space-y-3">
           <h3 className="text-xs font-black text-[#D4AF37] uppercase tracking-widest font-sans px-1">Earning Channels</h3>
           <div className="grid grid-cols-4 gap-2">
-            {((state.settings.earningChannels || []).filter(ch => ch.enabled !== false)).map((ch) => {
+            {((state.settings?.earningChannels || []).filter(ch => ch.enabled !== false)).map((ch) => {
               return (
                 <button 
                   key={ch.id} 

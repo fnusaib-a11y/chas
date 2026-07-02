@@ -17,7 +17,7 @@ import firebaseConfig from '../firebase-applet-config.json';
 const { firestoreDatabaseId, ...sdkConfig } = firebaseConfig;
 
 const app = initializeApp(sdkConfig);
-export const analytics = getAnalytics(app);
+export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 
 // Initialize Firestore with explicit database ID support and settings
 export const db = initializeFirestore(app, {

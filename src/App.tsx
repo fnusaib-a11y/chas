@@ -99,6 +99,7 @@ import ServiceHubScreen from './screens/ServiceHubScreen';
 import LogisticsHubScreen from './screens/LogisticsHubScreen';
 import EducationHubScreen from './screens/EducationHubScreen';
 import AIHubScreen from './screens/AIHubScreen';
+import MiningScreen from './screens/MiningScreen';
 import InteractiveBackground from './components/InteractiveBackground';
 
 // Main Layout Component
@@ -210,6 +211,7 @@ export default function App() {
         { id: 'webvisit', name: 'Web Visit', emoji: '🌐', path: '/tasks', enabled: true },
         { id: 'installs', name: 'Installs', emoji: '📱', path: '/tasks/cat/Install', enabled: true },
         { id: 'surveys', name: 'Surveys', emoji: '📋', path: '/tasks/cat/Survey', enabled: true },
+        { id: 'mining', name: 'Mining', emoji: '⛏️', path: '/mining', enabled: true },
         { id: 'telegram', name: 'Telegram', emoji: '💬', path: '/support', enabled: true },
         { id: 'bonus', name: 'Bonus', emoji: '⚡', path: '/daily-challenges', enabled: true },
       ],
@@ -217,7 +219,16 @@ export default function App() {
         { id: 'featured', name: 'Featured', enabled: true, filterType: 'featured' },
         { id: 'survey', name: 'Survey Tasks', enabled: true, filterType: 'survey' },
         { id: 'trending', name: 'Trending', enabled: true, filterType: 'trending' },
-      ]
+      ],
+      miningCipherWord: 'MINE',
+      miningCipherReward: 50000,
+      miningComboCards: ['btc_pairs', 'yt_channel', 'ai_bot'],
+      miningComboReward: 500000,
+      miningBaseEnergy: 1000,
+      miningMaxEnergyBoostsPerDay: 6,
+      miningBonusPerTap: 1,
+      miningProfitPerHourFactor: 1,
+      miningCardsConfig: []
     },
   });
 
@@ -353,6 +364,7 @@ export default function App() {
           <Route path="/logistics-hub" element={isAuth ? <AppLayout state={state}><LogisticsHubScreen state={state} /></AppLayout> : <Navigate to="/login" />} />
           <Route path="/education-hub" element={isAuth ? <AppLayout state={state}><EducationHubScreen state={state} /></AppLayout> : <Navigate to="/login" />} />
           <Route path="/ai-hub" element={isAuth ? <AppLayout state={state}><AIHubScreen state={state} /></AppLayout> : <Navigate to="/login" />} />
+          <Route path="/mining" element={isAuth ? <AppLayout state={state}><MiningScreen state={state} /></AppLayout> : <Navigate to="/login" />} />
 
           {/* Admin */}
           <Route 

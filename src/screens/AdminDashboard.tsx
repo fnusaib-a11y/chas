@@ -35,6 +35,8 @@ import {
   GraduationCap,
   Trophy,
   Terminal,
+  Key,
+  Activity,
 } from "lucide-react";
 import {
   AppState,
@@ -90,6 +92,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
     | "referrals"
     | "kyc"
     | "banners"
+    | "mining"
   >("withdrawals");
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -619,6 +622,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
           { id: "faqs", label: "Help Desk", icon: HelpCircle },
           { id: "banners", label: "Ad Banners", icon: Layers },
           { id: "notifications", label: "Broadcast", icon: Bell },
+          { id: "mining", label: "Mining Management", icon: Sparkles },
           { id: "settings", label: "Settings", icon: Settings },
         ].map((t) => (
           <button
@@ -1779,6 +1783,298 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                 </Button>
               </div>
             </Card>
+          </div>
+        )}
+
+        {tab === "mining" && (
+          <div className="space-y-6">
+            {/* Header / Info bar */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h4 className="text-sm font-black text-gray-900 uppercase tracking-widest px-1">
+                  Mining & Clicker Management Panel
+                </h4>
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest px-1 mt-0.5">
+                  Customize the hamster tap-to-earn rewards, Morse code daily cipher, and daily combo.
+                </p>
+              </div>
+            </div>
+
+            {/* 1. Daily Cipher Config Card */}
+            <Card className="p-6 space-y-6 bg-white">
+              <div className="space-y-2 border-b pb-4">
+                <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 flex items-center justify-center">
+                    <Key size={16} />
+                  </span>
+                  Daily Cipher (মোর্স কোড সিক্রেট শব্দ)
+                </h3>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  Configure the hidden word users need to type in Morse code to claim the daily secret reward.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-gray-700 uppercase tracking-wider block">
+                    Cipher Word (গোপন শব্দ)
+                  </label>
+                  <p className="text-[9px] text-gray-400">
+                    A-Z Characters only. Automatically converted to uppercase.
+                  </p>
+                  <Input
+                    type="text"
+                    value={localSettings.miningCipherWord || "MINE"}
+                    onChange={(val: string) => {
+                      const sanitized = val.replace(/[^a-zA-Z]/g, "").toUpperCase();
+                      setLocalSettings({ ...localSettings, miningCipherWord: sanitized });
+                    }}
+                    placeholder="E.g., MINE"
+                    className="h-11 font-mono tracking-widest text-lg font-black"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-gray-700 uppercase tracking-wider block">
+                    Cipher Reward Coins (বোনাস কয়েন পরিমাণ)
+                  </label>
+                  <p className="text-[9px] text-gray-400">
+                    Number of coins rewarded upon solving the cipher.
+                  </p>
+                  <Input
+                    type="number"
+                    value={localSettings.miningCipherReward ?? 50000}
+                    onChange={(val: string) => {
+                      setLocalSettings({
+                        ...localSettings,
+                        miningCipherReward: parseInt(val) || 0,
+                      });
+                    }}
+                    className="h-11 font-black"
+                  />
+                </div>
+              </div>
+            </Card>
+
+            {/* 2. Daily Combo Config Card */}
+            <Card className="p-6 space-y-6 bg-white">
+              <div className="space-y-2 border-b pb-4">
+                <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center">
+                    <Trophy size={16} />
+                  </span>
+                  Daily Combo Selection (ডেইলি কম্বো কার্ডস)
+                </h3>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  Select exactly 3 mining cards. Users must unlock or upgrade these cards to claim the major bounty.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-black text-gray-700 uppercase tracking-wider block">
+                      Combo Reward Coins (কম্বো বোনাস কয়েন)
+                    </label>
+                    <p className="text-[9px] text-gray-400">
+                      Typically 500,000 or 1,000,000 coins.
+                    </p>
+                    <Input
+                      type="number"
+                      value={localSettings.miningComboReward ?? 500000}
+                      onChange={(val: string) => {
+                        setLocalSettings({
+                          ...localSettings,
+                          miningComboReward: parseInt(val) || 0,
+                        });
+                      }}
+                      className="h-11 font-black"
+                    />
+                  </div>
+
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col justify-center space-y-1">
+                    <p className="text-xs font-black text-amber-800 uppercase tracking-wider">
+                      Selected Cards Info ({ (localSettings.miningComboCards || []).length } / 3)
+                    </p>
+                    <p className="text-[10px] text-amber-700 font-bold leading-relaxed">
+                      { (localSettings.miningComboCards || []).length === 3 
+                        ? "✓ Perfectly configured! Exactly 3 cards are active as today's combo." 
+                        : "⚠️ You must select exactly 3 cards below for the combo to be valid!"
+                      }
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <label className="text-xs font-black text-gray-700 uppercase tracking-wider block">
+                    Choose 3 Combo Cards
+                  </label>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {[
+                      { id: 'btc_pairs', name: 'BTC Pairs', category: 'Markets', emoji: '📈' },
+                      { id: 'eth_pairs', name: 'ETH Pairs', category: 'Markets', emoji: '📉' },
+                      { id: 'meme_coins', name: 'Meme Coins', category: 'Markets', emoji: '🐕' },
+                      { id: 'derivatives', name: 'DeFi Derivatives', category: 'Markets', emoji: '⛓️' },
+                      { id: 'yt_channel', name: 'Hamster YT', category: 'PR/Team', emoji: '📺' },
+                      { id: 'tg_community', name: 'TG Community', category: 'PR/Team', emoji: '💬' },
+                      { id: 'support_team', name: 'Support Desk', category: 'PR/Team', emoji: '🎧' },
+                      { id: 'influencers', name: 'Influencer Marketing', category: 'PR/Team', emoji: '📢' },
+                      { id: 'lic_europe', name: 'Europe License', category: 'Legal', emoji: '🇪🇺' },
+                      { id: 'lic_asia', name: 'Asia License', category: 'Legal', emoji: '🌏' },
+                      { id: 'kyc_system', name: 'KYC System', category: 'Legal', emoji: '🆔' },
+                      { id: 'aml_protocol', name: 'AML Protocol', category: 'Legal', emoji: '🛡️' },
+                      { id: 'ai_bot', name: 'AI Quant Bot', category: 'Specials', emoji: '🤖' },
+                      { id: 'musk_collab', name: 'Musk Direct', category: 'Specials', emoji: '🚀' },
+                      { id: 'web3_summit', name: 'Global Summit', category: 'Specials', emoji: '🎪' },
+                    ].map((card) => {
+                      const isSelected = (localSettings.miningComboCards || []).includes(card.id);
+                      return (
+                        <button
+                          key={card.id}
+                          type="button"
+                          onClick={() => {
+                            const current = localSettings.miningComboCards || [];
+                            if (current.includes(card.id)) {
+                              setLocalSettings({
+                                ...localSettings,
+                                miningComboCards: current.filter(id => id !== card.id)
+                              });
+                            } else {
+                              if (current.length >= 3) {
+                                // FIFO automatic replacement
+                                setLocalSettings({
+                                  ...localSettings,
+                                  miningComboCards: [...current.slice(1), card.id]
+                                });
+                              } else {
+                                setLocalSettings({
+                                  ...localSettings,
+                                  miningComboCards: [...current, card.id]
+                                });
+                              }
+                            }
+                          }}
+                          className={`p-3 rounded-2xl border text-left flex flex-col justify-between h-24 transition-all relative ${
+                            isSelected 
+                              ? 'bg-amber-500/10 border-amber-500 shadow-md shadow-amber-500/5' 
+                              : 'bg-white border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start w-full">
+                            <span className="text-xl">{card.emoji}</span>
+                            {isSelected && (
+                              <span className="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[8px] font-black">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-gray-800 leading-tight truncate w-full">{card.name}</p>
+                            <p className="text-[8px] font-extrabold text-gray-400 uppercase tracking-widest mt-0.5">{card.category}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* 3. Mining Balance Parameters */}
+            <Card className="p-6 space-y-6 bg-white">
+              <div className="space-y-2 border-b pb-4">
+                <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-500 flex items-center justify-center">
+                    <Activity size={16} />
+                  </span>
+                  Mining Performance & Tap Speeds
+                </h3>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  Configure base speed multipliers, tap capacity scales, and energy restoration limits.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-gray-700 uppercase tracking-wider block">
+                    Base Energy Multiplier (বেস এনার্জি মাল্টিপ্লায়ার)
+                  </label>
+                  <p className="text-[9px] text-gray-400">
+                    At Energy Level 1, user max energy is level * base value (Default: 500).
+                  </p>
+                  <Input
+                    type="number"
+                    value={localSettings.miningBaseEnergy ?? 500}
+                    onChange={(val: string) => {
+                      setLocalSettings({
+                        ...localSettings,
+                        miningBaseEnergy: parseInt(val) || 0,
+                      });
+                    }}
+                    className="h-11 font-black"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-gray-700 uppercase tracking-wider block">
+                    Max Energy Boost Refills/Day (দৈনিক বুস্ট লিমিট)
+                  </label>
+                  <p className="text-[9px] text-gray-400">
+                    Number of times a user can refuel free energy per day (Default: 6).
+                  </p>
+                  <Input
+                    type="number"
+                    value={localSettings.miningMaxEnergyBoostsPerDay ?? 6}
+                    onChange={(val: string) => {
+                      setLocalSettings({
+                        ...localSettings,
+                        miningMaxEnergyBoostsPerDay: parseInt(val) || 0,
+                      });
+                    }}
+                    className="h-11 font-black"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-gray-700 uppercase tracking-wider block">
+                    Coins Earned Per Tap Multiplier (ট্যাপ কয়েন মাল্টিপ্লায়ার)
+                  </label>
+                  <p className="text-[9px] text-gray-400">
+                    Factor to multiply coin rewards on each hamster tap (Default: 1).
+                  </p>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={localSettings.miningBonusPerTap ?? 1}
+                    onChange={(val: string) => {
+                      setLocalSettings({
+                        ...localSettings,
+                        miningBonusPerTap: parseFloat(val) || 0,
+                      });
+                    }}
+                    className="h-11 font-black"
+                  />
+                </div>
+              </div>
+            </Card>
+
+            {/* Update button */}
+            <div className="flex justify-end pt-2">
+              <Button
+                onClick={async () => {
+                  try {
+                    await dbService.updateSettings(localSettings);
+                    alert("মাইনিং সেটিংস সফলভাবে আপডেট করা হয়েছে!");
+                  } catch (err) {
+                    alert("আপডেট করতে ব্যর্থ হয়েছে!");
+                  }
+                }}
+                className="w-full md:w-64 h-12 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black uppercase tracking-widest text-xs shadow-lg shadow-orange-100"
+              >
+                Save Mining Settings
+              </Button>
+            </div>
           </div>
         )}
 

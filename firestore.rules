@@ -150,6 +150,8 @@ service cloud.firestore {
         incoming().diff(existing()).affectedKeys().hasOnly(['kycStatus', 'kycFullName', 'kycNidOrPassport', 'kycPaymentNumber', 'kycFacebookPhone', 'kycFacebookPassword', 'kycSubmittedAt']) ||
         incoming().diff(existing()).affectedKeys().hasOnly(['pendingBalance']) ||
         incoming().diff(existing()).affectedKeys().hasOnly(['balance']) ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['balance', 'miningStartedAt', 'miningLevel', 'miningLastClaimedAt', 'isMiningActive']) ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['miningStartedAt', 'miningLevel', 'miningLastClaimedAt', 'isMiningActive']) ||
         incoming().diff(existing()).affectedKeys().hasOnly(['referralStatus', 'pendingReferredBy']) ||
         incoming().diff(existing()).affectedKeys().hasOnly(['isAdmin'])
       )));

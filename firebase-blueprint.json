@@ -21,7 +21,11 @@
         "streak": { "type": "number" },
         "darkMode": { "type": "boolean" },
         "soundEnabled": { "type": "boolean" },
-        "avatar": { "type": "string" }
+        "avatar": { "type": "string" },
+        "miningStartedAt": { "type": "string" },
+        "miningLevel": { "type": "number" },
+        "miningLastClaimedAt": { "type": "string" },
+        "isMiningActive": { "type": "boolean" }
       },
       "required": ["id", "name", "phone", "referralCode", "balance", "level", "createdAt"]
     },

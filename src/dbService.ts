@@ -185,6 +185,7 @@ export const dbService = {
       { id: 'webvisit', name: 'Web Visit', emoji: '🌐', path: '/tasks', enabled: true },
       { id: 'installs', name: 'Installs', emoji: '📱', path: '/tasks/cat/Install', enabled: true },
       { id: 'surveys', name: 'Surveys', emoji: '📋', path: '/tasks/cat/Survey', enabled: true },
+      { id: 'mining', name: 'Mining', emoji: '⛏️', path: '/mining', enabled: true },
       { id: 'telegram', name: 'Telegram', emoji: '💬', path: '/support', enabled: true },
       { id: 'bonus', name: 'Bonus', emoji: '⚡', path: '/daily-challenges', enabled: true },
     ];
@@ -1951,5 +1952,86 @@ export const dbService = {
 
   async sellAIAsset(asset: Omit<AIAsset, 'id'>) {
     await addDoc(collection(db, 'aiAssets'), asset);
+  },
+
+  async startMining(userId: string): Promise<void> {
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, {
+      miningStartedAt: new Date().toISOString(),
+      isMiningActive: true
+    });
+  },
+
+  async claimMining(userId: string, earnedAmount: number): Promise<void> {
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, {
+      balance: increment(earnedAmount),
+      miningStartedAt: new Date().toISOString(),
+      miningLastClaimedAt: new Date().toISOString(),
+      isMiningActive: true
+    });
+
+    await addDoc(collection(db, 'transactions'), {
+      userId,
+      amount: earnedAmount,
+      type: 'earn',
+      description: `Mining Income (+${earnedAmount.toFixed(2)} Coins)`,
+      status: 'completed',
+      createdAt: new Date().toISOString()
+    });
+  },
+
+  async transferHamsterMiningToMainBalance(userId: string, amount: number): Promise<void> {
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, {
+      balance: increment(amount / 10),
+      hamsterMiningBalance: 0
+    });
+
+    await addDoc(collection(db, 'transactions'), {
+      userId,
+      amount: amount / 10,
+      type: 'earn',
+      description: `Hamster Mining Game Transfer to Wallet (+${amount.toFixed(0)} Coins) 🪙`,
+      status: 'completed',
+      createdAt: new Date().toISOString()
+    });
+  },
+
+  async stopMiningSession(userId: string, earnedAmount: number): Promise<void> {
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, {
+      balance: increment(earnedAmount),
+      isMiningActive: false,
+      miningLastClaimedAt: new Date().toISOString()
+    });
+
+    if (earnedAmount > 0) {
+      await addDoc(collection(db, 'transactions'), {
+        userId,
+        amount: earnedAmount,
+        type: 'earn',
+        description: `Mining Session Completed (+${earnedAmount.toFixed(2)} Coins)`,
+        status: 'completed',
+        createdAt: new Date().toISOString()
+      });
+    }
+  },
+
+  async upgradeMiningRig(userId: string, nextLevel: number, cost: number): Promise<void> {
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, {
+      balance: increment(-cost),
+      miningLevel: nextLevel
+    });
+
+    await addDoc(collection(db, 'transactions'), {
+      userId,
+      amount: -cost,
+      type: 'spend',
+      description: `Upgraded Mining Rig to Lvl ${nextLevel}`,
+      status: 'completed',
+      createdAt: new Date().toISOString()
+    });
   }
 };

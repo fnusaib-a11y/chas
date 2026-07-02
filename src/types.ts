@@ -79,6 +79,22 @@ export interface User {
   kycPaymentNumberConfirmed?: boolean;
   kycDeclarationAccepted?: boolean;
   tutorialSeen?: boolean;
+  miningStartedAt?: string;
+  miningLevel?: number;
+  miningLastClaimedAt?: string;
+  isMiningActive?: boolean;
+  hamsterProfitPerHour?: number;
+  hamsterLastClaimedAt?: string;
+  hamsterMultiTapLevel?: number;
+  hamsterEnergyLevel?: number;
+  hamsterCurrentEnergy?: number;
+  hamsterLastActiveAt?: string;
+  hamsterCards?: Record<string, number>;
+  hamsterLastCipherClaimedAt?: string;
+  hamsterLastComboClaimedAt?: string;
+  hamsterFullEnergyClaimsToday?: number;
+  hamsterLastFullEnergyClaimedAt?: string;
+  hamsterMiningBalance?: number;
 }
 
 export enum TaskType {
@@ -248,6 +264,24 @@ export interface AppSettings {
   };
   earningChannels?: EarningChannel[];
   coinTabs?: CoinTab[];
+  miningCipherWord?: string;
+  miningCipherReward?: number;
+  miningComboCards?: string[];
+  miningComboReward?: number;
+  miningBaseEnergy?: number;
+  miningMaxEnergyBoostsPerDay?: number;
+  miningBonusPerTap?: number;
+  miningProfitPerHourFactor?: number;
+  miningCardsConfig?: {
+    id: string;
+    name: string;
+    banglaName: string;
+    emoji: string;
+    category: string;
+    baseCost: number;
+    baseProfit: number;
+    description: string;
+  }[];
 }
 
 export interface CoinTab {
