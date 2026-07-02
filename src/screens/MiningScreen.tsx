@@ -209,14 +209,25 @@ export default function MiningScreen({ state }: { state: AppState }) {
   useEffect(() => {
     if (!user) return;
 
+    // Calculate total profit per hour based on cards under the new rule
+    const userCards = user.hamsterCards || {};
+    let calculatedProfit = 0;
+    UPGRADE_CARDS.forEach(card => {
+      const lvl = userCards[card.id] || 0;
+      if (lvl > 0) {
+        calculatedProfit += 6 * Math.pow(2, lvl - 1);
+      }
+    });
+    calculatedProfit = Math.max(6, calculatedProfit);
+
     if (lastInitializedUserIdRef.current !== user.id) {
       lastInitializedUserIdRef.current = user.id;
 
       setLocalBalance(user.hamsterMiningBalance || 0);
-      setProfitPerHour(user.hamsterProfitPerHour || 0);
+      setProfitPerHour(calculatedProfit);
       setMultiTapLevel(user.hamsterMultiTapLevel || 1);
       setEnergyLevel(user.hamsterEnergyLevel || 1);
-      setOwnedCards(user.hamsterCards || {});
+      setOwnedCards(userCards);
       setFullEnergyClaims(user.hamsterFullEnergyClaimsToday || 0);
       setLastFullEnergyClaimedAt(user.hamsterLastFullEnergyClaimedAt || '');
 
@@ -264,7 +275,7 @@ export default function MiningScreen({ state }: { state: AppState }) {
       }
 
       // Calculate passive offline earnings accumulated (cap at 3 hours of offline time)
-      if (user.hamsterProfitPerHour && user.hamsterProfitPerHour > 0) {
+      if (calculatedProfit > 0) {
         const lastClaimTime = user.hamsterLastClaimedAt 
           ? new Date(user.hamsterLastClaimedAt).getTime() 
           : (user.hamsterLastActiveAt ? new Date(user.hamsterLastActiveAt).getTime() : Date.now());
@@ -275,7 +286,7 @@ export default function MiningScreen({ state }: { state: AppState }) {
 
         if (elapsedHours >= 0.01) { // minimum 36 seconds away
           const cappedHours = Math.min(3, elapsedHours);
-          const coinsEarned = parseFloat((cappedHours * user.hamsterProfitPerHour).toFixed(2));
+          const coinsEarned = parseFloat((cappedHours * calculatedProfit).toFixed(2));
           
           if (coinsEarned > 1) {
             setOfflineEarnings({
@@ -287,10 +298,10 @@ export default function MiningScreen({ state }: { state: AppState }) {
       }
     } else {
       // Keep static variables in sync if updated from external database
-      setProfitPerHour(user.hamsterProfitPerHour || 0);
+      setProfitPerHour(calculatedProfit);
       setMultiTapLevel(user.hamsterMultiTapLevel || 1);
       setEnergyLevel(user.hamsterEnergyLevel || 1);
-      setOwnedCards(user.hamsterCards || {});
+      setOwnedCards(userCards);
       setFullEnergyClaims(user.hamsterFullEnergyClaimsToday || 0);
       setLastFullEnergyClaimedAt(user.hamsterLastFullEnergyClaimedAt || '');
     }
@@ -300,7 +311,7 @@ export default function MiningScreen({ state }: { state: AppState }) {
       setSoundOn(user.soundEnabled);
       lastSoundUserIdRef.current = user.id;
     }
-  }, [user]);
+  }, [user, UPGRADE_CARDS]);
 
   // Max energy limit
   const maxEnergy = useMemo(() => energyLevel * miningBaseEnergyValue, [energyLevel, miningBaseEnergyValue]);
@@ -592,7 +603,7 @@ export default function MiningScreen({ state }: { state: AppState }) {
 
   const getCardProfitAdded = (card: UpgradeCard) => {
     const lvl = getCardLevel(card.id);
-    return Math.round(card.baseProfit * Math.pow(card.profitMultiplier, lvl));
+    return lvl === 0 ? 6 : 6 * Math.pow(2, lvl - 1);
   };
 
   // Upgrade or Buy Card handler
@@ -625,7 +636,15 @@ export default function MiningScreen({ state }: { state: AppState }) {
       mainWalletDeduction = remainder / 10;
     }
 
-    const updatedProfitPerHour = profitPerHour + profitAdded;
+    // Recalculate total profit per hour based on updated cards to prevent precision drift
+    let updatedProfitPerHour = 0;
+    UPGRADE_CARDS.forEach(c => {
+      const lvl = updatedCards[c.id] || 0;
+      if (lvl > 0) {
+        updatedProfitPerHour += 6 * Math.pow(2, lvl - 1);
+      }
+    });
+    updatedProfitPerHour = Math.max(6, updatedProfitPerHour);
 
     // Check if daily combo unlocks with this purchase
     let alertCombo = false;
