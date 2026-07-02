@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { BottomNav, Modal, Button } from './components/UI';
-import { dbService } from './dbService';
+import { dbService, authHelper } from './dbService';
 import { AppState, User, Withdrawal, Order, Transaction, AppSettings } from './types';
 import { AdManager } from './AdManager';
 import { InternetGuard } from './components/InternetGuard';
@@ -239,7 +239,7 @@ export default function App() {
     setLoading(true);
     const unsub = dbService.subscribeToState((newState) => {
       setState(newState);
-      const userId = localStorage.getItem('current_user_id');
+      const userId = authHelper.getUserId();
       
       // Fixed loading logic: 
       // 1. If no user is logged in, show login screen immediately

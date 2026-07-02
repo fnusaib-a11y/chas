@@ -148,6 +148,18 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
     showAsPopup: false,
   });
   const [newFAQ, setNewFAQ] = useState({ question: "", answer: "", order: 0 });
+  const [newMiningCard, setNewMiningCard] = useState({
+    id: "",
+    name: "",
+    banglaName: "",
+    emoji: "⛏️",
+    category: "markets",
+    baseCost: 1000,
+    costMultiplier: 1.45,
+    description: "",
+    reqCardId: "",
+    reqCardLevel: 1,
+  });
   const [newMission, setNewMission] = useState<Partial<Mission>>({
     title: "",
     description: "",
@@ -2095,8 +2107,194 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                   Custom Mining Cards Configuration (মাইনিং কার্ডস কাস্টমাইজেশন)
                 </h3>
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  Configure card costs, Bangla names, description, and multipliers for each of the 15 upgrade cards.
+                  Configure card costs, Bangla names, description, and multipliers for each of the upgrade cards.
                 </p>
+              </div>
+
+              {/* Add New Card Form */}
+              <div className="p-5 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/40 space-y-4">
+                <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
+                  <span className="w-6 h-6 rounded-full bg-emerald-50 text-emerald-500 flex items-center justify-center font-bold text-xs">
+                    +
+                  </span>
+                  <p className="text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+                    Add New Mining Card (নতুন মাইনিং কার্ড তৈরি করুন)
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Card ID (Unique, lowercase)</label>
+                    <Input
+                      type="text"
+                      placeholder="e.g., core_devs"
+                      value={newMiningCard.id}
+                      onChange={(val: string) => setNewMiningCard({ ...newMiningCard, id: val.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
+                      className="h-9 text-xs font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">English Name</label>
+                    <Input
+                      type="text"
+                      placeholder="e.g., Core Developers"
+                      value={newMiningCard.name}
+                      onChange={(val: string) => setNewMiningCard({ ...newMiningCard, name: val })}
+                      className="h-9 text-xs font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Bangla Name</label>
+                    <Input
+                      type="text"
+                      placeholder="e.g., কোর ডেভেলপার"
+                      value={newMiningCard.banglaName}
+                      onChange={(val: string) => setNewMiningCard({ ...newMiningCard, banglaName: val })}
+                      className="h-9 text-xs font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Emoji</label>
+                    <Input
+                      type="text"
+                      placeholder="e.g., 💻"
+                      value={newMiningCard.emoji}
+                      onChange={(val: string) => setNewMiningCard({ ...newMiningCard, emoji: val })}
+                      className="h-9 text-xs font-bold text-center"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Category</label>
+                    <select
+                      value={newMiningCard.category}
+                      onChange={(e) => setNewMiningCard({ ...newMiningCard, category: e.target.value })}
+                      className="w-full h-9 rounded-xl border border-gray-250 bg-white px-3 py-1 text-xs font-bold text-slate-800 outline-none focus:border-amber-500"
+                    >
+                      <option value="markets">Markets</option>
+                      <option value="team">PR & Team</option>
+                      <option value="legal">Legal</option>
+                      <option value="specials">Specials</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Base Cost (Coins)</label>
+                    <Input
+                      type="number"
+                      value={newMiningCard.baseCost}
+                      onChange={(val: string) => setNewMiningCard({ ...newMiningCard, baseCost: parseInt(val) || 0 })}
+                      className="h-9 text-xs font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Cost Multiplier</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={newMiningCard.costMultiplier}
+                      onChange={(val: string) => setNewMiningCard({ ...newMiningCard, costMultiplier: parseFloat(val) || 1.1 })}
+                      className="h-9 text-xs font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Description</label>
+                    <Input
+                      type="text"
+                      placeholder="Card description..."
+                      value={newMiningCard.description}
+                      onChange={(val: string) => setNewMiningCard({ ...newMiningCard, description: val })}
+                      className="h-9 text-xs font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">
+                      Prerequisite Card Required (লক খুলতে প্রয়োজনীয় কার্ড)
+                    </label>
+                    <select
+                      value={newMiningCard.reqCardId || ""}
+                      onChange={(e) => setNewMiningCard({ ...newMiningCard, reqCardId: e.target.value })}
+                      className="w-full h-9 rounded-xl border border-gray-250 bg-white px-3 py-1 text-xs font-bold text-slate-800 outline-none focus:border-amber-500"
+                    >
+                      <option value="">None (কোনো শর্ত নেই)</option>
+                      {(localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                        ? localSettings.miningCardsConfig
+                        : DEFAULT_MINING_CARDS
+                      ).map((c: any) => (
+                        <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">
+                      Required Level of Prerequisite Card (প্রয়োজনীয় কার্ডের লেভেল)
+                    </label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={newMiningCard.reqCardLevel || 1}
+                      disabled={!newMiningCard.reqCardId}
+                      onChange={(val: string) => setNewMiningCard({ ...newMiningCard, reqCardLevel: parseInt(val) || 1 })}
+                      className="h-9 text-xs font-bold"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-1">
+                  <Button
+                    onClick={() => {
+                      if (!newMiningCard.id) {
+                        alert("অনুগ্রহ করে একটি ইউনিক কার্ড আইডি দিন!");
+                        return;
+                      }
+                      if (!newMiningCard.name) {
+                        alert("অনুগ্রহ করে ইংরেজি নাম দিন!");
+                        return;
+                      }
+                      if (!newMiningCard.banglaName) {
+                        alert("অনুগ্রহ করে বাংলা নাম দিন!");
+                        return;
+                      }
+
+                      const currentConfig = localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                        ? [...localSettings.miningCardsConfig]
+                        : JSON.parse(JSON.stringify(DEFAULT_MINING_CARDS));
+
+                      const idExists = currentConfig.some((c: any) => c.id === newMiningCard.id);
+                      if (idExists) {
+                        alert("এই আইডি দিয়ে ইতিমধ্যে একটি কার্ড রয়েছে! অনুগ্রহ করে অন্য আইডি ব্যবহার করুন।");
+                        return;
+                      }
+
+                      const updatedConfig = [...currentConfig, { ...newMiningCard }];
+                      setLocalSettings({ ...localSettings, miningCardsConfig: updatedConfig });
+                      
+                      // Reset form
+                      setNewMiningCard({
+                        id: "",
+                        name: "",
+                        banglaName: "",
+                        emoji: "⛏️",
+                        category: "markets",
+                        baseCost: 1000,
+                        costMultiplier: 1.45,
+                        description: "",
+                        reqCardId: "",
+                        reqCardLevel: 1,
+                      });
+
+                      alert("নতুন মাইনিং কার্ড যোগ করা হয়েছে! এটি স্থায়ীভাবে সেভ করতে নিচের 'Save Mining Settings' এ ক্লিক করুন।");
+                    }}
+                    className="h-9 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black uppercase tracking-wider shadow-sm"
+                  >
+                    + Add New Card
+                  </Button>
+                </div>
               </div>
 
               <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
@@ -2114,6 +2312,24 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{card.category} (ID: {card.id})</p>
                           </div>
                         </div>
+
+                        <button
+                          onClick={() => {
+                            if (confirm(`আপনি কি নিশ্চিত যে "${card.name}" কার্ডটি ডিলিট করতে চান?`)) {
+                              const currentConfig = localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                                ? [...localSettings.miningCardsConfig]
+                                : JSON.parse(JSON.stringify(DEFAULT_MINING_CARDS));
+                              
+                              const updatedConfig = currentConfig.filter((c: any) => c.id !== card.id);
+                              setLocalSettings({ ...localSettings, miningCardsConfig: updatedConfig });
+                              alert("কার্ডটি ডিলিট করা হয়েছে! পরিবর্তনটি স্থায়ী করতে নিচে 'Save Mining Settings' এ ক্লিক করুন।");
+                            }
+                          }}
+                          className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors"
+                          title="Delete Card"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -2176,6 +2392,56 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                                 ? [...localSettings.miningCardsConfig]
                                 : JSON.parse(JSON.stringify(DEFAULT_MINING_CARDS));
                               currentCards[idx].description = val;
+                              setLocalSettings({ ...localSettings, miningCardsConfig: currentCards });
+                            }}
+                            className="h-9 text-xs font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-slate-100/60">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">
+                            Prerequisite Card Required (লক খুলতে প্রয়োজনীয় কার্ড)
+                          </label>
+                          <select
+                            value={card.reqCardId || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const currentCards = localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                                ? [...localSettings.miningCardsConfig]
+                                : JSON.parse(JSON.stringify(DEFAULT_MINING_CARDS));
+                              currentCards[idx].reqCardId = val;
+                              setLocalSettings({ ...localSettings, miningCardsConfig: currentCards });
+                            }}
+                            className="w-full h-9 rounded-xl border border-gray-250 bg-white px-3 py-1 text-xs font-bold text-slate-800 outline-none focus:border-amber-500"
+                          >
+                            <option value="">None (কোনো শর্ত নেই)</option>
+                            {(localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                              ? localSettings.miningCardsConfig
+                              : DEFAULT_MINING_CARDS
+                            )
+                            .filter((c: any) => c.id !== card.id)
+                            .map((c: any) => (
+                              <option key={c.id} value={c.id}>{c.name} ({c.id})</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">
+                            Required Level of Prerequisite Card (প্রয়োজনীয় কার্ডের লেভেল)
+                          </label>
+                          <Input
+                            type="number"
+                            min="1"
+                            value={card.reqCardLevel || 1}
+                            disabled={!card.reqCardId}
+                            onChange={(val: string) => {
+                              const currentCards = localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                                ? [...localSettings.miningCardsConfig]
+                                : JSON.parse(JSON.stringify(DEFAULT_MINING_CARDS));
+                              currentCards[idx].reqCardLevel = parseInt(val) || 1;
                               setLocalSettings({ ...localSettings, miningCardsConfig: currentCards });
                             }}
                             className="h-9 text-xs font-bold"

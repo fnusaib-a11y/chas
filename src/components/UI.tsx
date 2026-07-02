@@ -5,8 +5,9 @@
 
 import React, { useMemo, useEffect, useRef } from 'react';
 
-import { Home, ClipboardList, ShoppingBag, Wallet, User as UserIcon, Zap, Share2 } from 'lucide-react';
+import { Home, ClipboardList, ShoppingBag, Wallet, User as UserIcon, Zap, Share2, Pickaxe } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
+import { motion } from 'motion/react';
 import { AppState } from '../types';
 
 export function BottomNav({ state }: { state?: AppState }) {
@@ -20,30 +21,64 @@ export function BottomNav({ state }: { state?: AppState }) {
     { icon: Home, label: 'Home', path: '/dashboard' },
     { icon: ClipboardList, label: 'Tasks', path: '/tasks' },
     { icon: ShoppingBag, label: 'Shop', path: '/shop' },
-    { icon: Share2, label: 'Refer', path: '/referral' },
+    { icon: Pickaxe, label: 'Mining', path: '/mining' },
     { icon: Wallet, label: 'Wallet', path: '/wallet' },
     { icon: UserIcon, label: 'Profile', path: '/profile' },
   ] as { icon: any; label: string; path: string; hasBadge?: boolean }[];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-100 flex items-center justify-around py-2 pb-4 z-50">
+    <nav className="fixed bottom-3 left-3 right-3 max-w-md mx-auto bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400 border border-amber-300 flex items-center justify-around py-1 px-2 rounded-2xl shadow-[0_12px_36px_-6px_rgba(245,158,11,0.55)] z-50">
       {navItems.map((item) => (
         <NavLink
           key={item.path}
           to={item.path}
-          className={({ isActive }) =>
-            `flex flex-col items-center gap-1 transition-colors relative ${
-              isActive ? 'text-[#FFC107]' : item.hasBadge ? 'text-red-500' : 'text-gray-400'
-            }`
-          }
+          className="relative flex-1"
         >
-          <div className="relative">
-            <item.icon size={20} />
-            {item.hasBadge && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white" />
-            )}
-          </div>
-          <span className="text-[10px] font-medium">{item.label}</span>
+          {({ isActive }) => (
+            <div className="flex flex-col items-center justify-center gap-0.5 relative py-1.5 px-0.5">
+              {/* Floating Active Background capsule */}
+              {isActive && (
+                <motion.div
+                  layoutId="activeBottomTab"
+                  className="absolute inset-0 bg-white/40 border border-white/40 rounded-xl"
+                  transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                />
+              )}
+
+              {/* Icon Container with Micro-scale effect */}
+              <motion.div
+                animate={{
+                  scale: isActive ? 1.15 : 1,
+                  y: isActive ? -1 : 0,
+                }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                className={`relative z-10 p-0.5 rounded-lg ${
+                  isActive ? 'text-slate-950 font-black' : item.hasBadge ? 'text-rose-600' : 'text-slate-800/60'
+                }`}
+              >
+                <item.icon size={18} className={isActive ? 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)]' : ''} />
+                {item.hasBadge && (
+                  <span className="absolute top-0 right-0 w-2 h-2 bg-rose-500 rounded-full border border-slate-950" />
+                )}
+              </motion.div>
+
+              {/* Text Label */}
+              <span className={`text-[8px] font-extrabold tracking-wider uppercase z-10 transition-colors duration-200 ${
+                isActive ? 'text-slate-950 font-black' : 'text-slate-800/60 hover:text-slate-950'
+              }`}>
+                {item.label}
+              </span>
+
+              {/* Small indicator bar */}
+              {isActive && (
+                <motion.span
+                  layoutId="activeBottomTabIndicator"
+                  className="absolute bottom-0 w-3 h-0.5 bg-slate-950 rounded-full shadow-[0_0_4px_rgba(0,0,0,0.3)]"
+                  transition={{ type: "spring", stiffness: 380, damping: 25 }}
+                />
+              )}
+            </div>
+          )}
         </NavLink>
       ))}
     </nav>

@@ -27,6 +27,49 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
+function setCookie(name: string, value: string, days: number) {
+  const date = new Date();
+  date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+  const expires = "; expires=" + date.toUTCString();
+  document.cookie = name + "=" + (value || "")  + expires + "; path=/; SameSite=Lax; Secure";
+}
+
+function getCookie(name: string) {
+  const nameEQ = name + "=";
+  const ca = document.cookie.split(';');
+  for(let i=0;i < ca.length;i++) {
+    let c = ca[i];
+    while (c.charAt(0)==' ') c = c.substring(1,c.length);
+    if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+  }
+  return null;
+}
+
+function eraseCookie(name: string) {   
+  document.cookie = name +'=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+}
+
+export const authHelper = {
+  getUserId: () => {
+    const local = localStorage.getItem('current_user_id');
+    if (local) return local;
+    const cookie = getCookie('current_user_id');
+    if (cookie) {
+      localStorage.setItem('current_user_id', cookie);
+      return cookie;
+    }
+    return null;
+  },
+  setUserId: (uid: string) => {
+    localStorage.setItem('current_user_id', uid);
+    setCookie('current_user_id', uid, 365);
+  },
+  removeUserId: () => {
+    localStorage.removeItem('current_user_id');
+    eraseCookie('current_user_id');
+  }
+};
+
 enum OperationType {
   CREATE = 'create',
   UPDATE = 'update',
@@ -169,7 +212,7 @@ const fileToBase64AndCompress = (file: File, maxWidth = 512, maxHeight = 512): P
 export const dbService = {
   // Real-time State
   subscribeToState(onUpdate: (state: AppState) => void) {
-    const userId = localStorage.getItem('current_user_id');
+    const userId = authHelper.getUserId();
     
     const defaultHubs = {
       serviceHub: { visible: true, label: 'SERVICE HUB', subLabel: 'LOCAL EXPERTS' },
@@ -577,11 +620,11 @@ export const dbService = {
     unsubs.push(auth.onAuthStateChanged(async (authUser) => {
       if (userCleanup) userCleanup();
       if (authUser) {
-        // Find the active uid from localStorage fallback
-        const currentUid = localStorage.getItem('current_user_id') || authUser.uid;
+        // Find the active uid from authHelper fallback
+        const currentUid = authHelper.getUserId() || authUser.uid;
         userCleanup = setupUserListeners(currentUid);
       } else {
-        const storedUid = localStorage.getItem('current_user_id');
+        const storedUid = authHelper.getUserId();
         if (storedUid) {
           userCleanup = setupUserListeners(storedUid);
           try {
@@ -694,7 +737,7 @@ export const dbService = {
     // Also track phone index for easy login
     await setDoc(doc(db, 'phone_index', newUser.phone), { userId: newUser.id });
     
-    localStorage.setItem('current_user_id', newUser.id);
+    authHelper.setUserId(newUser.id);
     return newUser;
   },
 
@@ -719,7 +762,7 @@ export const dbService = {
         const userDoc = await getDoc(doc(db, 'users', userId));
         if (userDoc.exists()) {
           const user = userDoc.data() as User;
-          localStorage.setItem('current_user_id', user.id);
+          authHelper.setUserId(user.id);
           return user;
         } else {
           // Clean up the orphan index doc to avoid deadlock
@@ -741,11 +784,11 @@ export const dbService = {
   },
 
   logout() {
-    localStorage.removeItem('current_user_id');
+    authHelper.removeUserId();
   },
 
   async updateCurrentUser(updates: Partial<User>) {
-    const userId = localStorage.getItem('current_user_id');
+    const userId = authHelper.getUserId();
     if (!userId) return;
     await updateDoc(doc(db, 'users', userId), updates);
   },
@@ -755,7 +798,7 @@ export const dbService = {
   },
 
   async enterReferralCode(code: string): Promise<{ success: boolean; message: string }> {
-    const userId = localStorage.getItem('current_user_id');
+    const userId = authHelper.getUserId();
     if (!userId) return { success: false, message: 'লগইন করুন প্রথমে।' };
     
     const codes = code.trim().toUpperCase();
@@ -863,7 +906,7 @@ export const dbService = {
   },
 
   async uploadProfileImage(file: File): Promise<string> {
-    const userId = localStorage.getItem('current_user_id');
+    const userId = authHelper.getUserId();
     if (!userId) throw new Error('Not logged in');
     
     // 1. Client-side compression to super lightweight JPEG (max 512x512)

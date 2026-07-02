@@ -50,6 +50,8 @@ interface UpgradeCard {
   baseProfit: number;
   profitMultiplier: number;
   description: string;
+  reqCardId?: string;
+  reqCardLevel?: number;
 }
 
 const UPGRADE_CARDS: UpgradeCard[] = [
@@ -158,8 +160,8 @@ export default function MiningScreen({ state }: { state: AppState }) {
     return (val24h / 24) * factor; // Hourly profit
   };
 
-  // Active Navigation Screen Tab inside Mining screen: 'exchange' | 'mine' | 'cipher' | 'boosts'
-  const [activeScreenTab, setActiveScreenTab] = useState<'exchange' | 'mine' | 'cipher' | 'boosts'>('exchange');
+  // Active Navigation Screen Tab inside Mining screen: 'exchange' | 'mine' | 'cipher' | 'boosts' | 'friends'
+  const [activeScreenTab, setActiveScreenTab] = useState<'exchange' | 'mine' | 'cipher' | 'boosts' | 'friends'>('exchange');
   
   // Mining upgrade station category
   const [activeCategory, setActiveCategory] = useState<'markets' | 'team' | 'legal' | 'specials'>('markets');
@@ -202,6 +204,37 @@ export default function MiningScreen({ state }: { state: AppState }) {
   // Full Energy boost limit tracker (6 per day)
   const [fullEnergyClaims, setFullEnergyClaims] = useState<number>(0);
   const [lastFullEnergyClaimedAt, setLastFullEnergyClaimedAt] = useState<string>('');
+
+  // Daily Streak Reward Modal and claiming states
+  const [showDailyRewardModal, setShowDailyRewardModal] = useState<boolean>(false);
+  const [claimingCheckIn, setClaimingCheckIn] = useState<boolean>(false);
+
+  const hasCheckedInToday = () => {
+    if (!user || !user.lastCheckIn) return false;
+    const lastCheckInDate = new Date(user.lastCheckIn);
+    const today = new Date();
+    return lastCheckInDate.getDate() === today.getDate() &&
+           lastCheckInDate.getMonth() === today.getMonth() &&
+           lastCheckInDate.getFullYear() === today.getFullYear();
+  };
+
+  const handleDailyCheckIn = async () => {
+    if (!user || hasCheckedInToday()) return;
+    setClaimingCheckIn(true);
+    try {
+      const success = await dbService.claimDailyCheckIn(user);
+      if (success) {
+        showToast('সফলভাবে দৈনিক চেক-ইন বোনাস ৫০ কয়েন (৫ টাকা) আপনার ওয়ালেটে যোগ হয়েছে!', 'success');
+        ads.showInterstitial(state.settings);
+      } else {
+        showToast('আপনি আজ ইতিমধ্যেই চেক-ইন করেছেন!', 'error');
+      }
+    } catch (err) {
+      showToast('চেক-ইন করতে সমস্যা হয়েছে। দয়া করে আবার চেষ্টা করুন।', 'error');
+    } finally {
+      setClaimingCheckIn(false);
+    }
+  };
 
   // Local changes pending save indicator
   const isDirtyRef = useRef<boolean>(false);
@@ -628,6 +661,18 @@ export default function MiningScreen({ state }: { state: AppState }) {
   const handleBuyUpgradeCard = async (card: UpgradeCard) => {
     if (!user) return;
 
+    // Prerequisite level constraint check
+    if (card.reqCardId) {
+      const reqLvl = getCardLevel(card.reqCardId);
+      const reqLvlNeeded = card.reqCardLevel || 1;
+      if (reqLvl < reqLvlNeeded) {
+        const reqCard = UPGRADE_CARDS.find(c => c.id === card.reqCardId);
+        playErrorSound();
+        showToast(`কার্ডটি লক করা আছে! এটি কিনতে "${reqCard?.name || card.reqCardId}" কার্ডটি লেভেল ${reqLvlNeeded} করতে হবে।`, 'error');
+        return;
+      }
+    }
+
     const cost = getCardCost(card);
     const profitAdded = getCardProfitAdded(card);
 
@@ -940,6 +985,80 @@ export default function MiningScreen({ state }: { state: AppState }) {
         )}
       </AnimatePresence>
 
+      {/* Daily Streak Reward Modal */}
+      <AnimatePresence>
+        {showDailyRewardModal && (
+          <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-[#121824] border border-amber-500/30 max-w-sm w-full rounded-[36px] p-6 text-center space-y-6 shadow-2xl relative overflow-hidden"
+            >
+              {/* Animated glowing backdrops */}
+              <div className="absolute -right-12 -top-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="absolute -left-12 -bottom-12 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
+
+              <div className="w-16 h-16 bg-gradient-to-tr from-amber-500/20 to-orange-500/20 rounded-2xl flex items-center justify-center mx-auto border border-amber-500/30 text-[#F59E0B] shadow-inner">
+                <Calendar size={32} className="animate-pulse" />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-center gap-1.5">
+                  <span className="text-[9px] font-black bg-amber-500 text-slate-950 px-2.5 py-0.5 rounded-full uppercase tracking-widest font-sans">
+                    Bonus Ready
+                  </span>
+                  {user && (
+                    <span className="text-[9px] font-black text-amber-500 font-sans">
+                      🔥 {user.streak || 0} Day Streak
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-base font-black text-slate-100 tracking-tight">আপনার ডেইলি বোনাস রেডি!</h3>
+                <p className="text-[10px] text-slate-400 font-medium leading-relaxed max-w-[90%] mx-auto">
+                  প্রতিদিন বিরতিহীনভাবে এসে আপনার দৈনিক বোনাস সংগ্রহ করুন এবং আপনার Daily Streak বজায় রাখুন।
+                </p>
+              </div>
+
+              <div className="bg-[#0E131F] rounded-2xl p-4 border border-slate-800 space-y-2">
+                <div className="flex justify-between items-center text-[9px] text-slate-500 font-bold uppercase tracking-wider">
+                  <span>আজকের পুরস্কার</span>
+                  <span className="text-[#F59E0B]">কয়েন + টাকা</span>
+                </div>
+                <div className="flex items-center justify-center gap-1.5">
+                  <span className="text-3xl font-black text-[#D4AF37] tracking-tight">৫০ কয়েন</span>
+                  <span className="text-amber-500 text-xl">🪙</span>
+                </div>
+                <p className="text-[8px] text-emerald-400 font-semibold">(১০০% ফ্রি ওয়ালেট ক্রেডিট যোগ হবে)</p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowDailyRewardModal(false)}
+                  className="flex-1 h-12 bg-[#1A2333] hover:bg-slate-800 text-slate-300 font-black rounded-2xl tracking-wide text-xs active:scale-95 transition-all"
+                >
+                  বন্ধ করুন
+                </button>
+                <button
+                  onClick={async () => {
+                    await handleDailyCheckIn();
+                    setShowDailyRewardModal(false);
+                  }}
+                  disabled={claimingCheckIn || hasCheckedInToday()}
+                  className={`flex-1 h-12 font-black rounded-2xl tracking-wide text-xs active:scale-95 transition-all ${
+                    hasCheckedInToday()
+                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-amber-500 to-orange-600 text-slate-900 shadow-xl'
+                  }`}
+                >
+                  {claimingCheckIn ? 'সংগ্রহ করা হচ্ছে...' : hasCheckedInToday() ? 'আজকের বোনাস সংগৃহীত ✓' : 'কয়েন সংগ্রহ করুন 🪙'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Top Header Bar */}
       <header className="sticky top-0 bg-[#0E131F]/90 backdrop-blur-md z-30 border-b border-slate-800/40 flex items-center justify-between p-4 h-16 shrink-0">
         <button 
@@ -964,7 +1083,7 @@ export default function MiningScreen({ state }: { state: AppState }) {
       </header>
 
       {/* Inner Screen Tab Navigation */}
-      <div className="grid grid-cols-4 border-b border-slate-800/30 bg-[#121926]/40 p-1 font-semibold text-[10px] uppercase tracking-wider">
+      <div className="grid grid-cols-5 border-b border-slate-800/30 bg-[#121926]/40 p-1 font-semibold text-[8px] sm:text-[9px] uppercase tracking-wider">
         <button 
           onClick={() => setActiveScreenTab('exchange')}
           className={`py-3 text-center transition-all ${activeScreenTab === 'exchange' ? 'text-[#F59E0B] border-b-2 border-[#F59E0B] font-black' : 'text-slate-400'}`}
@@ -975,19 +1094,25 @@ export default function MiningScreen({ state }: { state: AppState }) {
           onClick={() => setActiveScreenTab('mine')}
           className={`py-3 text-center transition-all ${activeScreenTab === 'mine' ? 'text-[#F59E0B] border-b-2 border-[#F59E0B] font-black' : 'text-slate-400'}`}
         >
-          Mine (কার্ড)
+          Mine
         </button>
         <button 
           onClick={() => setActiveScreenTab('cipher')}
           className={`py-3 text-center transition-all ${activeScreenTab === 'cipher' ? 'text-[#F59E0B] border-b-2 border-[#F59E0B] font-black' : 'text-slate-400'}`}
         >
-          Cipher (কোড)
+          Cipher
         </button>
         <button 
           onClick={() => setActiveScreenTab('boosts')}
           className={`py-3 text-center transition-all ${activeScreenTab === 'boosts' ? 'text-[#F59E0B] border-b-2 border-[#F59E0B] font-black' : 'text-slate-400'}`}
         >
           Boosts
+        </button>
+        <button 
+          onClick={() => setActiveScreenTab('friends')}
+          className={`py-3 text-center transition-all ${activeScreenTab === 'friends' ? 'text-[#F59E0B] border-b-2 border-[#F59E0B] font-black' : 'text-slate-400'}`}
+        >
+          Friends
         </button>
       </div>
 
@@ -1023,12 +1148,18 @@ export default function MiningScreen({ state }: { state: AppState }) {
           
           {/* Daily checkin card */}
           <button 
-            onClick={() => navigate('/dashboard')} // connects to daily check-in on dashboard
-            className="bg-[#121824] border border-slate-800 p-2.5 rounded-2xl flex flex-col items-center justify-center text-center space-y-1 hover:border-slate-750 transition-colors"
+            onClick={() => setShowDailyRewardModal(true)}
+            className={`border p-2.5 rounded-2xl flex flex-col items-center justify-center text-center space-y-1 transition-colors ${
+              hasCheckedInToday() 
+                ? 'bg-[#121824]/60 border-emerald-500/20' 
+                : 'bg-[#121824] border-slate-800 hover:border-slate-750'
+            }`}
           >
-            <Calendar size={18} className="text-[#F59E0B]" />
+            <Calendar size={18} className={hasCheckedInToday() ? "text-emerald-400" : "text-[#F59E0B]"} />
             <span className="text-[8px] font-black text-slate-200 uppercase tracking-wider leading-none">Daily Reward</span>
-            <p className="text-[7px] font-bold text-slate-400">Claim 1.5K+ Coins</p>
+            <p className={`text-[7px] font-bold ${hasCheckedInToday() ? "text-emerald-400" : "text-slate-400"}`}>
+              {hasCheckedInToday() ? "Claimed ✓" : "Claim Daily"}
+            </p>
           </button>
 
           {/* Daily Cipher morse decoder card */}
@@ -1283,10 +1414,19 @@ export default function MiningScreen({ state }: { state: AppState }) {
                 const mainWalletCoins = Math.floor((user?.balance || 0) * 10);
                 const canAfford = (localBalance + mainWalletCoins) >= cost;
 
+                const reqCard = card.reqCardId ? UPGRADE_CARDS.find(c => c.id === card.reqCardId) : null;
+                const reqLvl = card.reqCardId ? getCardLevel(card.reqCardId) : 0;
+                const reqLvlNeeded = card.reqCardLevel || 1;
+                const isLocked = card.reqCardId ? (reqLvl < reqLvlNeeded) : false;
+
                 return (
                   <div 
                     key={card.id}
-                    className="bg-[#121824] border border-slate-800 p-3.5 rounded-[24px] flex flex-col justify-between space-y-4 shadow-sm hover:border-slate-700 transition-colors"
+                    className={`bg-[#121824] border p-3.5 rounded-[24px] flex flex-col justify-between space-y-4 shadow-sm transition-all ${
+                      isLocked 
+                        ? 'border-slate-800/40 opacity-75 grayscale-[30%]' 
+                        : 'border-slate-800 hover:border-slate-700'
+                    }`}
                   >
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -1309,18 +1449,32 @@ export default function MiningScreen({ state }: { state: AppState }) {
                       </p>
                     </div>
 
-                    <button
-                      onClick={() => handleBuyUpgradeCard(card)}
-                      className={`w-full h-10 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all flex items-center justify-center gap-1 border ${
-                        canAfford 
-                          ? 'bg-amber-500 text-slate-900 border-amber-400 hover:bg-amber-400 active:scale-95' 
-                          : 'bg-slate-900 text-slate-500 border-slate-800/80 cursor-not-allowed'
-                      }`}
-                    >
-                      <span>Buy:</span>
-                      <span className="font-bold">{cost.toLocaleString()}</span>
-                      <span>🪙</span>
-                    </button>
+                    {isLocked ? (
+                      <div className="w-full bg-slate-900/90 border border-rose-500/20 text-rose-400 p-2 rounded-xl text-center flex flex-col items-center justify-center gap-1.5 min-h-[44px]">
+                        <span className="text-[9px] font-black flex items-center gap-1 text-rose-500">
+                          🔒 Locked (লকড)
+                        </span>
+                        <div className="text-[7px] font-bold text-slate-400 leading-tight">
+                          Requires "{reqCard?.name || card.reqCardId}" Lvl {reqLvlNeeded}
+                          <div className="text-rose-400/80 mt-0.5">
+                            ({reqCard?.banglaName || card.reqCardId} লেভেল {reqLvlNeeded} প্রয়োজন)
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleBuyUpgradeCard(card)}
+                        className={`w-full h-10 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all flex items-center justify-center gap-1 border ${
+                          canAfford 
+                            ? 'bg-amber-500 text-slate-900 border-amber-400 hover:bg-amber-400 active:scale-95' 
+                            : 'bg-slate-900 text-slate-500 border-slate-800/80 cursor-not-allowed'
+                        }`}
+                      >
+                        <span>Buy:</span>
+                        <span className="font-bold">{cost.toLocaleString()}</span>
+                        <span>🪙</span>
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -1517,18 +1671,119 @@ export default function MiningScreen({ state }: { state: AppState }) {
           </div>
         )}
 
-        {/* Informative Help Guide Card */}
-        <div className="bg-[#121824]/30 border border-slate-800 p-4 rounded-3xl space-y-2">
-          <div className="flex items-center gap-2 text-[#FFC107]">
-            <Info size={15} />
-            <h4 className="text-[10px] font-black uppercase tracking-wider font-sans">RULES OF THE HAMSTER EMPIRE (নিয়মাবলী)</h4>
+        {/* 5. FRIENDS SCREEN TAB (Referrals & Share Link) */}
+        {activeScreenTab === 'friends' && (
+          <div className="space-y-4">
+            
+            {/* Share Widget */}
+            <div className="bg-[#121824] border border-slate-800 p-5 rounded-[28px] space-y-4 shadow-xl text-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-xl pointer-events-none" />
+              
+              <div className="w-16 h-16 bg-amber-500/10 rounded-3xl flex items-center justify-center text-[#FFC107] mx-auto mb-2 border border-amber-500/20">
+                <Users size={32} />
+              </div>
+              
+              <div className="space-y-1">
+                <h3 className="text-xs font-black text-slate-100 uppercase tracking-wider leading-none">
+                  Invite Friends & Earn (আমন্ত্রণ করুন এবং ইনকাম করুন)
+                </h3>
+                <p className="text-[8px] text-slate-400">
+                  আপনার বন্ধুদের আমন্ত্রণ জানান এবং তাদের ইনকামের ২০% পর্যন্ত বোনাস কমিশন পান!
+                </p>
+              </div>
+
+              {/* Referral Code Box */}
+              <div className="bg-[#0E131F] p-4 rounded-2xl border border-slate-800/40 space-y-3">
+                <div className="flex flex-col items-center justify-center gap-1">
+                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">
+                    Your Referral Code (আপনার রেফার কোড)
+                  </span>
+                  <span className="text-xl font-sans font-black text-amber-500 tracking-widest">
+                    {user?.referralCode || 'N/A'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      if (user?.referralCode) {
+                        navigator.clipboard.writeText(user.referralCode);
+                        showToast("রেফার কোড কপি করা হয়েছে! 📋", "success");
+                      }
+                    }}
+                    className="py-2.5 px-3 rounded-xl bg-slate-900 border border-slate-800 text-[8px] font-extrabold uppercase text-slate-300 hover:text-white transition-all hover:bg-slate-850 active:scale-95 flex items-center justify-center gap-1.5"
+                  >
+                    Copy Code
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (user?.referralCode) {
+                        const refUrl = `${window.location.origin}/register?ref=${user.referralCode}`;
+                        navigator.clipboard.writeText(refUrl);
+                        showToast("রেফার লিংক কপি করা হয়েছে! 🔗", "success");
+                      }
+                    }}
+                    className="py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-[8px] font-black uppercase tracking-wider transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                  >
+                    Copy Link
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Referrals Stats & List */}
+            <div className="bg-[#121824] border border-slate-800 p-4 rounded-[28px] space-y-3.5 shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-800/60 pb-2">
+                <span className="text-[9px] font-black text-slate-200 uppercase tracking-widest">
+                  My Referrals ({state.users.filter(u => u.referredBy === user?.id).length})
+                </span>
+                <span className="text-[8px] text-amber-500 font-black">
+                  Commission Rate: {state.settings?.referralCommissionRate ?? 20}% 🪙
+                </span>
+              </div>
+
+              {state.users.filter(u => u.referredBy === user?.id).length === 0 ? (
+                <div className="py-6 text-center text-slate-500 space-y-1">
+                  <p className="text-xs font-bold">No friends invited yet!</p>
+                  <p className="text-[8px]">আপনার বন্ধুদের ইনভাইট করে টিম তৈরি করুন এবং বেশি কয়েন আর্ন করুন।</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                  {state.users
+                    .filter(u => u.referredBy === user?.id)
+                    .map((member) => (
+                      <div 
+                        key={member.id} 
+                        className="bg-[#0E131F] border border-slate-800/30 p-2.5 rounded-xl flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-300 border border-slate-700/50">
+                            {member.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-slate-100">{member.name}</p>
+                            <p className="text-[7px] text-slate-400">
+                              Tasks Done: {member.totalTasksCompleted || 0}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <p className="text-[8px] font-black text-amber-500">
+                            {Math.round(member.hamsterMiningBalance || 0).toLocaleString()} 🪙
+                          </p>
+                          <p className="text-[7px] font-bold text-slate-400">
+                            Total Minings
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+
           </div>
-          <ul className="text-[9px] text-slate-400 space-y-1 font-bold leading-relaxed list-disc list-inside">
-            <li><span className="text-slate-200">এক্সচেঞ্জ মোড:</span> স্ক্রিনে ট্যাপ করে কয়েন আয় করুন। এনার্জি রিফিল হতে সময় লাগে।</li>
-            <li><span className="text-slate-200">অফলাইন ইনকাম:</span> "Mine" কার্ড আপগ্রেড করলে আপনি অফলাইনে থাকলেও কয়েন জমবে (সর্বোচ্চ ৩ ঘণ্টা)।</li>
-            <li><span className="text-slate-200">ডেইলি কম্বো ও সাইফার:</span> বিশেষ ৩টি কার্ড আনলক করুন বা গোপন মোর্স কোড "MINE" টাইপ করে লাখ লাখ বোনাস পান!</li>
-          </ul>
-        </div>
+        )}
 
         {/* Live Banner Advertising space */}
         <div className="pt-1 text-center">
