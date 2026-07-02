@@ -257,7 +257,7 @@ export default function MiningScreen({ state }: { state: AppState }) {
         const lastActive = new Date(user.hamsterLastActiveAt).getTime();
         const now = Date.now();
         const elapsedSeconds = Math.max(0, (now - lastActive) / 1000);
-        const regenerated = Math.floor(elapsedSeconds * 3); // +3 energy per second
+        const regenerated = Math.floor(elapsedSeconds / 300); // +1 energy every 5 minutes (300 seconds)
         setEnergy(Math.min(maxEnergyVal, initialEnergy + regenerated));
       } else {
         setEnergy(initialEnergy);
@@ -331,11 +331,11 @@ export default function MiningScreen({ state }: { state: AppState }) {
         isDirtyRef.current = true;
       }
 
-      // 2. Refill energy dynamically (+3 per second)
+      // 2. Refill energy dynamically (+1 every 5 minutes, i.e., +1/300 per second)
       setEnergy(prev => {
         if (prev < maxEnergy) {
           isDirtyRef.current = true;
-          return Math.min(maxEnergy, prev + 3);
+          return Math.min(maxEnergy, prev + (1 / 300));
         }
         return prev;
       });
@@ -446,7 +446,7 @@ export default function MiningScreen({ state }: { state: AppState }) {
     const tapValue = multiTapLevel;
 
     // Verify energy limits
-    if (energy < tapValue) {
+    if (energy < 1) {
       playErrorSound();
       showToast('পর্যাপ্ত এনার্জি নেই! রিফিল হওয়ার জন্য অপেক্ষা করুন।', 'error');
       return;
@@ -466,7 +466,7 @@ export default function MiningScreen({ state }: { state: AppState }) {
     }
 
     // Deduct energy and add balance
-    setEnergy(prev => Math.max(0, prev - tapValue));
+    setEnergy(prev => Math.max(0, prev - 1));
     setLocalBalance(prev => prev + tapValue);
     isDirtyRef.current = true;
 
@@ -1137,7 +1137,7 @@ export default function MiningScreen({ state }: { state: AppState }) {
                   <span>ENERGY LIMIT</span>
                 </p>
                 <p className="text-slate-100 font-mono text-xs">
-                  {energy} / {maxEnergy}
+                  {Math.floor(energy)} / {maxEnergy}
                 </p>
               </div>
 
@@ -1145,12 +1145,12 @@ export default function MiningScreen({ state }: { state: AppState }) {
               <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800">
                 <div 
                   className="bg-gradient-to-r from-amber-400 to-yellow-500 h-full transition-all duration-300 rounded-full"
-                  style={{ width: `${(energy / maxEnergy) * 100}%` }}
+                  style={{ width: `${(Math.floor(energy) / maxEnergy) * 100}%` }}
                 />
               </div>
 
               <div className="flex justify-between items-center text-[9px] font-bold text-slate-500 pt-1">
-                <span>Refills at +3 ⚡ per second</span>
+                <span>৫ মিনিট পর পর ১ ⚡ জমা হবে (Refills +1 every 5 minutes)</span>
                 <button 
                   onClick={() => setActiveScreenTab('boosts')}
                   className="text-amber-400 hover:underline uppercase tracking-widest flex items-center gap-0.5"
