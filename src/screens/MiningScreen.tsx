@@ -145,6 +145,19 @@ export default function MiningScreen({ state }: { state: AppState }) {
   const miningBaseEnergyValue = state.settings?.miningBaseEnergy ?? 500;
   const miningBonusPerTap = state.settings?.miningBonusPerTap ?? 1;
 
+  const getCardProfitValue = (level: number) => {
+    if (level <= 0) return 0;
+    const factor = state.settings?.miningProfitPerHourFactor ?? 1;
+    const q = Math.floor((level - 1) / 4);
+    const r = (level - 1) % 4;
+    let val24h = 0;
+    if (r === 0) val24h = q * 0.1 + 0.0001;
+    else if (r === 1) val24h = q * 0.1 + 0.0010;
+    else if (r === 2) val24h = q * 0.1 + 0.0100;
+    else val24h = (q + 1) * 0.1;
+    return (val24h / 24) * factor; // Hourly profit
+  };
+
   // Active Navigation Screen Tab inside Mining screen: 'exchange' | 'mine' | 'cipher' | 'boosts'
   const [activeScreenTab, setActiveScreenTab] = useState<'exchange' | 'mine' | 'cipher' | 'boosts'>('exchange');
   
@@ -215,10 +228,9 @@ export default function MiningScreen({ state }: { state: AppState }) {
     UPGRADE_CARDS.forEach(card => {
       const lvl = userCards[card.id] || 0;
       if (lvl > 0) {
-        calculatedProfit += 6 * Math.pow(2, lvl - 1);
+        calculatedProfit += getCardProfitValue(lvl);
       }
     });
-    calculatedProfit = Math.max(6, calculatedProfit);
 
     if (lastInitializedUserIdRef.current !== user.id) {
       lastInitializedUserIdRef.current = user.id;
@@ -397,6 +409,12 @@ export default function MiningScreen({ state }: { state: AppState }) {
     if (amountToTransfer <= 0) {
       playErrorSound();
       showToast('ট্রান্সফার করার মতো কোনো কয়েন নেই! আগে মাইনিং করে কয়েন জমান।', 'error');
+      return;
+    }
+
+    if (amountToTransfer < 10) {
+      playErrorSound();
+      showToast('ট্রান্সফার করতে কমপক্ষে ১০টি কয়েন থাকতে হবে! (Minimum 10 Coins required for transfer)', 'error');
       return;
     }
 
@@ -603,7 +621,7 @@ export default function MiningScreen({ state }: { state: AppState }) {
 
   const getCardProfitAdded = (card: UpgradeCard) => {
     const lvl = getCardLevel(card.id);
-    return lvl === 0 ? 6 : 6 * Math.pow(2, lvl - 1);
+    return getCardProfitValue(lvl + 1) - getCardProfitValue(lvl);
   };
 
   // Upgrade or Buy Card handler
@@ -641,10 +659,9 @@ export default function MiningScreen({ state }: { state: AppState }) {
     UPGRADE_CARDS.forEach(c => {
       const lvl = updatedCards[c.id] || 0;
       if (lvl > 0) {
-        updatedProfitPerHour += 6 * Math.pow(2, lvl - 1);
+        updatedProfitPerHour += getCardProfitValue(lvl);
       }
     });
-    updatedProfitPerHour = Math.max(6, updatedProfitPerHour);
 
     // Check if daily combo unlocks with this purchase
     let alertCombo = false;
@@ -673,7 +690,7 @@ export default function MiningScreen({ state }: { state: AppState }) {
       await dbService.updateUser(user.id, updateFields);
 
       playUpgradeSound();
-      showToast(`সফলভাবে "${card.name}" আপগ্রেড করেছেন! (+${profitAdded.toLocaleString()} Coins/hr) 📈`, 'success');
+      showToast(`সফলভাবে "${card.name}" আপগ্রেড করেছেন! (+${(profitAdded * 24).toFixed(4)} Coins/24h) 📈`, 'success');
 
       if (alertCombo) {
         showToast('অভিনন্দন! আজকের ডেইলি কম্বো কার্ডের সেট মিলে গেছে! 🎁', 'success');
@@ -1077,9 +1094,9 @@ export default function MiningScreen({ state }: { state: AppState }) {
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 font-bold border-t border-slate-850 pt-2.5">
-            <span>Profit per hour:</span>
-            <span className="text-emerald-400 font-extrabold">+{profitPerHour.toLocaleString()} Coins / Hr 🚀</span>
+          <div className="flex flex-col items-center justify-center gap-0.5 text-[10px] text-slate-400 font-bold border-t border-slate-850 pt-2.5">
+            <span className="text-[#38BDF8] font-black">Daily Profit: +{(profitPerHour * 24).toFixed(4)} Coins 🪙</span>
+            <span className="text-slate-500 font-extrabold">Hourly Profit: +{profitPerHour.toFixed(6)} Coins / Hr 🚀</span>
           </div>
 
           {/* Transfer to Main Wallet Button */}
@@ -1263,7 +1280,8 @@ export default function MiningScreen({ state }: { state: AppState }) {
                 const level = getCardLevel(card.id);
                 const cost = getCardCost(card);
                 const profitAdded = getCardProfitAdded(card);
-                const canAfford = localBalance >= cost;
+                const mainWalletCoins = Math.floor((user?.balance || 0) * 10);
+                const canAfford = (localBalance + mainWalletCoins) >= cost;
 
                 return (
                   <div 
@@ -1284,9 +1302,10 @@ export default function MiningScreen({ state }: { state: AppState }) {
                     </div>
 
                     <div className="bg-[#0E131F] p-2 rounded-xl border border-slate-800/30 text-[8px] space-y-0.5">
-                      <p className="text-slate-500 font-bold">PASSIVE PROFIT</p>
-                      <p className="text-emerald-400 font-black flex items-center gap-0.5">
-                        <span>+{profitAdded.toLocaleString()} Coins / Hr</span>
+                      <p className="text-slate-500 font-bold">PASSIVE PROFIT ADDED</p>
+                      <p className="text-[#38BDF8] font-black flex flex-col gap-0.5">
+                        <span>+{(profitAdded * 24).toFixed(4)} Coins / 24h 🪙</span>
+                        <span className="text-slate-500 text-[7px] font-extrabold">+{(profitAdded).toFixed(6)} / Hr</span>
                       </p>
                     </div>
 

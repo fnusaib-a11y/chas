@@ -1048,7 +1048,7 @@ export const dbService = {
           if (uplineSnap.exists()) {
             const uplineUser = uplineSnap.data() as User;
             const currentRate = tierCommissionRates[tier - 1] ?? 1;
-            const commissionAmount = log.reward * (currentRate / 100);
+            const commissionAmount = Math.round(log.reward * (currentRate / 100));
             
             await updateDoc(uplineRef, {
               balance: increment(commissionAmount)
@@ -1983,16 +1983,26 @@ export const dbService = {
 
   async transferHamsterMiningToMainBalance(userId: string, amount: number): Promise<void> {
     const userDocRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userDocRef);
+    const addedBalance = Math.floor(amount / 10);
+    let newBalance = addedBalance;
+
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      const currentBalance = userData.balance || 0;
+      newBalance = Math.round(currentBalance + addedBalance);
+    }
+
     await updateDoc(userDocRef, {
-      balance: increment(amount / 10),
+      balance: newBalance,
       hamsterMiningBalance: 0
     });
 
     await addDoc(collection(db, 'transactions'), {
       userId,
-      amount: amount / 10,
+      amount: addedBalance,
       type: 'earn',
-      description: `Hamster Mining Game Transfer to Wallet (+${amount.toFixed(0)} Coins) 🪙`,
+      description: `Hamster Mining Game Transfer to Wallet (+${(addedBalance * 10).toFixed(0)} Coins) 🪙`,
       status: 'completed',
       createdAt: new Date().toISOString()
     });

@@ -300,7 +300,7 @@ const Referral = ({ state }: { state: AppState }) => {
                                      {/* Details summary */}
                                      <div className="bg-white/60 p-2 rounded-xl text-[8px] font-bold text-gray-500 uppercase flex justify-between">
                                         <span>কাজ সম্পন্ন: {member.totalTasksCompleted} টি</span>
-                                        <span>ব্যালেন্স: ৳{(member.balance || 0).toFixed(2)}</span>
+                                        <span>ব্যালেন্স: ৳{(member.balance || 0).toFixed(0)}</span>
                                      </div>
 
                                      {/* Connected Sub-Tree (Tier 2/3) */}
@@ -322,7 +322,7 @@ const Referral = ({ state }: { state: AppState }) => {
                                                        <span className="text-[7px] text-[#FFC107] font-extrabold shrink-0 font-sans">+10%</span>
                                                     </div>
                                                     <div className="text-[6px] text-gray-400 flex justify-between border-t border-gray-50 pt-1 mt-0.5">
-                                                       <span>ব্যালেন্স: ৳{(child.balance || 0).toFixed(1)}</span>
+                                                       <span>ব্যালেন্স: ৳{(child.balance || 0).toFixed(0)}</span>
                                                        <span>কাজ: {child.totalTasksCompleted}</span>
                                                     </div>
                                                  </div>
@@ -403,11 +403,11 @@ const Referral = ({ state }: { state: AppState }) => {
                                   </div>
                                   <div className="border-x border-gray-100 px-1">
                                      <p className="text-[7.5px] text-gray-400 font-extrabold uppercase tracking-widest mb-1">তাদের ইনকাম</p>
-                                     <p className="text-xs font-black text-slate-700 font-sans">৳{(member.balance || 0).toLocaleString([], { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                     <p className="text-xs font-black text-slate-700 font-sans">৳{(member.balance || 0).toLocaleString([], { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
                                   </div>
                                   <div>
                                      <p className="text-[7.5px] text-gray-400 font-extrabold uppercase tracking-widest mb-1">আপনার কমিশন ({memberLevel === 1 ? '২০%' : '১০%'})</p>
-                                     <p className="text-xs font-black text-green-500 font-sans">৳{(member.totalTasksCompleted * (memberLevel === 1 ? 0.2 : 0.1)).toLocaleString([], { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                                     <p className="text-xs font-black text-green-500 font-sans">৳{(member.totalTasksCompleted * (memberLevel === 1 ? 0.2 : 0.1)).toLocaleString([], { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</p>
                                   </div>
                                </div>
 

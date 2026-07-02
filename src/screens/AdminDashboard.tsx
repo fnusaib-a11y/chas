@@ -64,6 +64,24 @@ import { generateProductImage } from "../services/geminiService";
 import { resizeBase64Image } from "../lib/imageUtils";
 import { ImagePicker } from "../components/ImagePicker";
 
+const DEFAULT_MINING_CARDS = [
+  { id: 'btc_pairs', name: 'BTC Pairs Trading', banglaName: 'বিটিসি পেয়ার ট্রেডিং', emoji: '📈', category: 'markets', baseCost: 150, costMultiplier: 1.45, description: 'Trade Bitcoin pairs for solid consistent passive gains.' },
+  { id: 'eth_pairs', name: 'ETH Pairs Trading', banglaName: 'ইথেরিয়াম ট্রেডিং', emoji: '📉', category: 'markets', baseCost: 400, costMultiplier: 1.48, description: 'Trade Ethereum on low margin to increase returns.' },
+  { id: 'meme_coins', name: 'Meme Coins Venture', banglaName: 'মিম কয়েন ভেঞ্চার', emoji: '🐕', category: 'markets', baseCost: 1200, costMultiplier: 1.5, description: 'Highly volatile, high reward investments in trending meme coins.' },
+  { id: 'derivatives', name: 'DeFi Derivatives', banglaName: 'ডিপাই ডেরিভেটিভস', emoji: '⛓️', category: 'markets', baseCost: 4500, costMultiplier: 1.55, description: 'Liquidity pools and decentralized margin leverage systems.' },
+  { id: 'yt_channel', name: 'Hamster YT Channel', banglaName: 'ইউটিউব চ্যানেল ক্রিয়েশন', emoji: '📺', category: 'team', baseCost: 200, costMultiplier: 1.4, description: 'Create viral videos to attract more miners and investors.' },
+  { id: 'tg_community', name: 'Telegram Community', banglaName: 'টেলিগ্রাম কমিউনিটি', emoji: '💬', category: 'team', baseCost: 500, costMultiplier: 1.42, description: 'Engage with our army of tap-to-earn community members.' },
+  { id: 'support_team', name: '24/7 Support Desk', banglaName: 'গ্রাহক সেবা টিম', emoji: '🎧', category: 'team', baseCost: 1500, costMultiplier: 1.45, description: 'Improve user retention and confidence with helpful customer support.' },
+  { id: 'influencers', name: 'Influencer Marketing', banglaName: 'ইনফ্লুয়েন্সার পার্টনারশিপ', emoji: '📢', category: 'team', baseCost: 5000, costMultiplier: 1.5, description: 'Collaborate with top crypto influencers to hype our token.' },
+  { id: 'lic_europe', name: 'Europe Crypto License', banglaName: 'ইউরোপ লাইসেন্স', emoji: '🇪🇺', category: 'legal', baseCost: 800, costMultiplier: 1.45, description: 'Establish legal compliance in European jurisdictions.' },
+  { id: 'lic_asia', name: 'Asia Operative License', banglaName: 'এশিয়া অপারেটিভ লাইসেন্স', emoji: '🌏', category: 'legal', baseCost: 2500, costMultiplier: 1.48, description: 'Expand our services into high-volume Asian markets.' },
+  { id: 'kyc_system', name: 'KYC Verification System', banglaName: 'কেওয়াইসি ভেরিফিকেশন', emoji: '🆔', category: 'legal', baseCost: 6000, costMultiplier: 1.52, description: 'Automated user identity check to reduce fraud risk.' },
+  { id: 'aml_protocol', name: 'Anti-Money Laundering', banglaName: 'এএমএল প্রটোকল', emoji: '🛡️', category: 'legal', baseCost: 15000, costMultiplier: 1.58, description: 'High-level audits to guarantee safety and compliance.' },
+  { id: 'ai_bot', name: 'AI Quantitative Bot', banglaName: 'এআই কোয়ান্টাম ট্রেডিং', emoji: '🤖', category: 'specials', baseCost: 3000, costMultiplier: 1.6, description: 'Let AI analyze market trends to execute automated trades.' },
+  { id: 'musk_collab', name: 'Musk Direct Collab', banglaName: 'ইলন মাস্ক সরাসরি পার্টনারশিপ', emoji: '🚀', category: 'specials', baseCost: 25000, costMultiplier: 1.7, description: 'A single tweet from the leader of Mars sky-rockets our volume!' },
+  { id: 'web3_summit', name: 'Global Web3 Summit Host', banglaName: 'ওয়ার্ল্ড ওয়েব৩ সামিট', emoji: '🎪', category: 'specials', baseCost: 75000, costMultiplier: 1.75, description: 'Host the premier cryptocurrency conference of the year.' },
+];
+
 interface AdminDashboardProps {
   state: AppState;
 }
@@ -1911,23 +1929,10 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                   </label>
                   
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {[
-                      { id: 'btc_pairs', name: 'BTC Pairs', category: 'Markets', emoji: '📈' },
-                      { id: 'eth_pairs', name: 'ETH Pairs', category: 'Markets', emoji: '📉' },
-                      { id: 'meme_coins', name: 'Meme Coins', category: 'Markets', emoji: '🐕' },
-                      { id: 'derivatives', name: 'DeFi Derivatives', category: 'Markets', emoji: '⛓️' },
-                      { id: 'yt_channel', name: 'Hamster YT', category: 'PR/Team', emoji: '📺' },
-                      { id: 'tg_community', name: 'TG Community', category: 'PR/Team', emoji: '💬' },
-                      { id: 'support_team', name: 'Support Desk', category: 'PR/Team', emoji: '🎧' },
-                      { id: 'influencers', name: 'Influencer Marketing', category: 'PR/Team', emoji: '📢' },
-                      { id: 'lic_europe', name: 'Europe License', category: 'Legal', emoji: '🇪🇺' },
-                      { id: 'lic_asia', name: 'Asia License', category: 'Legal', emoji: '🌏' },
-                      { id: 'kyc_system', name: 'KYC System', category: 'Legal', emoji: '🆔' },
-                      { id: 'aml_protocol', name: 'AML Protocol', category: 'Legal', emoji: '🛡️' },
-                      { id: 'ai_bot', name: 'AI Quant Bot', category: 'Specials', emoji: '🤖' },
-                      { id: 'musk_collab', name: 'Musk Direct', category: 'Specials', emoji: '🚀' },
-                      { id: 'web3_summit', name: 'Global Summit', category: 'Specials', emoji: '🎪' },
-                    ].map((card) => {
+                    {(localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                      ? localSettings.miningCardsConfig
+                      : DEFAULT_MINING_CARDS
+                    ).map((card) => {
                       const isSelected = (localSettings.miningComboCards || []).includes(card.id);
                       return (
                         <button
@@ -1995,7 +2000,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="space-y-2">
                   <label className="text-xs font-black text-gray-700 uppercase tracking-wider block">
                     Base Energy Multiplier (বেস এনার্জি মাল্টিপ্লায়ার)
@@ -2056,6 +2061,130 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                     className="h-11 font-black"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-gray-700 uppercase tracking-wider block">
+                    Global Mining Profit Multiplier (গ্লোবাল প্রফিট মাল্টিপ্লায়ার)
+                  </label>
+                  <p className="text-[9px] text-gray-400">
+                    Factor to scale card passive earnings (Default: 1).
+                  </p>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    value={localSettings.miningProfitPerHourFactor ?? 1}
+                    onChange={(val: string) => {
+                      setLocalSettings({
+                        ...localSettings,
+                        miningProfitPerHourFactor: parseFloat(val) || 0,
+                      });
+                    }}
+                    className="h-11 font-black"
+                  />
+                </div>
+              </div>
+            </Card>
+
+            {/* Custom Mining Cards Configuration */}
+            <Card className="p-6 space-y-6 bg-white">
+              <div className="space-y-2 border-b pb-4">
+                <h3 className="text-sm font-black text-gray-900 flex items-center gap-2">
+                  <span className="w-8 h-8 rounded-lg bg-orange-50 text-orange-500 flex items-center justify-center">
+                    <Layers size={16} />
+                  </span>
+                  Custom Mining Cards Configuration (মাইনিং কার্ডস কাস্টমাইজেশন)
+                </h3>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  Configure card costs, Bangla names, description, and multipliers for each of the 15 upgrade cards.
+                </p>
+              </div>
+
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
+                {(localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                  ? localSettings.miningCardsConfig
+                  : DEFAULT_MINING_CARDS
+                ).map((card: any, idx: number) => {
+                  return (
+                    <div key={card.id} className="p-4 border border-slate-100 rounded-2xl bg-slate-50/50 space-y-4">
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">{card.emoji}</span>
+                          <div>
+                            <p className="text-xs font-black text-slate-800">{card.name}</p>
+                            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{card.category} (ID: {card.id})</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Bangla Name</label>
+                          <Input
+                            type="text"
+                            value={card.banglaName}
+                            onChange={(val: string) => {
+                              const currentCards = localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                                ? [...localSettings.miningCardsConfig]
+                                : JSON.parse(JSON.stringify(DEFAULT_MINING_CARDS));
+                              currentCards[idx].banglaName = val;
+                              setLocalSettings({ ...localSettings, miningCardsConfig: currentCards });
+                            }}
+                            className="h-9 text-xs font-bold"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Base Cost (Coins)</label>
+                          <Input
+                            type="number"
+                            value={card.baseCost}
+                            onChange={(val: string) => {
+                              const currentCards = localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                                ? [...localSettings.miningCardsConfig]
+                                : JSON.parse(JSON.stringify(DEFAULT_MINING_CARDS));
+                              currentCards[idx].baseCost = parseInt(val) || 0;
+                              setLocalSettings({ ...localSettings, miningCardsConfig: currentCards });
+                            }}
+                            className="h-9 text-xs font-bold"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Cost Multiplier</label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={card.costMultiplier}
+                            onChange={(val: string) => {
+                              const currentCards = localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                                ? [...localSettings.miningCardsConfig]
+                                : JSON.parse(JSON.stringify(DEFAULT_MINING_CARDS));
+                              currentCards[idx].costMultiplier = parseFloat(val) || 1.1;
+                              setLocalSettings({ ...localSettings, miningCardsConfig: currentCards });
+                            }}
+                            className="h-9 text-xs font-bold"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Description</label>
+                          <Input
+                            type="text"
+                            value={card.description}
+                            onChange={(val: string) => {
+                              const currentCards = localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                                ? [...localSettings.miningCardsConfig]
+                                : JSON.parse(JSON.stringify(DEFAULT_MINING_CARDS));
+                              currentCards[idx].description = val;
+                              setLocalSettings({ ...localSettings, miningCardsConfig: currentCards });
+                            }}
+                            className="h-9 text-xs font-bold"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </Card>
 
@@ -2737,7 +2866,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                 </div>
                 <div className="text-right">
                   <div className="text-xs font-black text-[#FFC107]">
-                    ৳{user.balance.toFixed(1)}
+                    ৳{user.balance.toFixed(0)}
                   </div>
                   <div className="text-[8px] font-bold text-gray-400 uppercase">
                     Balance

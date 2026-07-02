@@ -54,7 +54,7 @@ const MainProfile = ({ state, onLogout }: { state: AppState; onLogout: () => voi
   };
 
   const stats = [
-    { label: 'Earning', value: `৳${user.balance.toFixed(2)}`, color: 'text-[#FFC107]', icon: TrendingUp },
+    { label: 'Earning', value: `৳${user.balance.toFixed(0)}`, color: 'text-[#FFC107]', icon: TrendingUp },
     { label: 'Tasks', value: user.totalTasksCompleted, color: 'text-blue-500', icon: ClipboardList },
     { label: 'Referrals', value: user.totalReferrals, color: 'text-green-500', icon: User },
   ];
