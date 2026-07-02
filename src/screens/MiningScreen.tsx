@@ -224,7 +224,7 @@ export default function MiningScreen({ state }: { state: AppState }) {
     try {
       const success = await dbService.claimDailyCheckIn(user);
       if (success) {
-        showToast('সফলভাবে দৈনিক চেক-ইন বোনাস ৫০ কয়েন (৫ টাকা) আপনার ওয়ালেটে যোগ হয়েছে!', 'success');
+        showToast('সফলভাবে দৈনিক চেক-ইন বোনাস ৫০ কয়েন আপনার ওয়ালেটে যোগ হয়েছে!', 'success');
         ads.showInterstitial(state.settings);
       } else {
         showToast('আপনি আজ ইতিমধ্যেই চেক-ইন করেছেন!', 'error');
@@ -1023,7 +1023,7 @@ export default function MiningScreen({ state }: { state: AppState }) {
               <div className="bg-[#0E131F] rounded-2xl p-4 border border-slate-800 space-y-2">
                 <div className="flex justify-between items-center text-[9px] text-slate-500 font-bold uppercase tracking-wider">
                   <span>আজকের পুরস্কার</span>
-                  <span className="text-[#F59E0B]">কয়েন + টাকা</span>
+                  <span className="text-[#F59E0B]">ফ্রি কয়েন</span>
                 </div>
                 <div className="flex items-center justify-center gap-1.5">
                   <span className="text-3xl font-black text-[#D4AF37] tracking-tight">৫০ কয়েন</span>

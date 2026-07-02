@@ -124,7 +124,7 @@ export default function Dashboard({ state }: { state: AppState }) {
     try {
       const success = await dbService.claimDailyCheckIn(user);
       if (success) {
-        alert('সফলভাবে দৈনিক চেক-ইন বোনাস ৫০ কয়েন (৫ টাকা) আপনার ওয়ালেটে যোগ হয়েছে!');
+        alert('সফলভাবে দৈনিক চেক-ইন বোনাস ৫০ কয়েন আপনার ওয়ালেটে যোগ হয়েছে!');
         setShowStreakNotification(false);
         // Show start.io/monetag interstitial ad upon bonus claim
         ads.showInterstitial(state.settings);
@@ -577,7 +577,7 @@ export default function Dashboard({ state }: { state: AppState }) {
               </div>
               <h3 className="text-lg font-black text-[#37474F] font-sans">রেফারেল কোড ব্যবহার করুন</h3>
               <p className="text-xs text-gray-500 leading-relaxed font-bold font-sans">
-                আপনার বন্ধুর থেকে পাওয়া রেফারেল কোডটি এখানে লিখুন। এডমিন আপনার একাউন্ট চেক করে অনুমোদন দিলেই আপনি পাবেন ফ্রিতে ৫ টাকা ইনস্ট্যান্ট বোনাস!
+                আপনার বন্ধুর থেকে পাওয়া রেফারেল কোডটি এখানে লিখুন। এডমিন আপনার একাউন্ট চেক করে অনুমোদন দিলেই আপনি পাবেন ফ্রিতে ৫০০ কয়েন ইনস্ট্যান্ট বোনাস!
               </p>
             </div>
 

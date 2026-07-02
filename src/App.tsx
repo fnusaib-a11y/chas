@@ -115,6 +115,43 @@ const AppLayout = ({ children, hideNav, state }: { children: React.ReactNode; hi
     shopping: 'bg-emerald-50 text-emerald-900 font-sans'
   };
 
+  // If user is suspended, block their access completely
+  if (state?.currentUser?.isSuspended) {
+    return (
+      <div className={`min-h-screen ${isDark ? 'dark bg-slate-900' : 'bg-rose-50/40'} max-w-md mx-auto relative flex flex-col font-sans p-8 justify-center items-center text-center space-y-6 mb-env`}>
+        <div className="w-20 h-20 bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-full flex items-center justify-center text-3xl shadow-lg animate-pulse">
+          🚫
+        </div>
+        <div className="space-y-3">
+          <h1 className="text-xl font-black text-rose-600 dark:text-rose-400 uppercase tracking-tight">
+            অ্যাকাউন্ট সাসপেন্ড করা হয়েছে
+          </h1>
+          <h2 className="text-sm font-black text-slate-800 dark:text-slate-200">
+            Your Account Has Been Suspended
+          </h2>
+          <div className="p-4 bg-white dark:bg-slate-800 border border-rose-100 dark:border-rose-950/50 rounded-2xl shadow-sm text-left max-w-xs mx-auto">
+            <p className="text-[10px] font-black uppercase text-rose-500 tracking-wider mb-1">Reason (কারণ):</p>
+            <p className="text-xs font-bold text-slate-700 dark:text-slate-300 leading-relaxed">
+              {state.currentUser.suspensionReason || "নিয়ম লঙ্ঘনের কারণে আপনার অ্যাকাউন্টটি সাময়িকভাবে বা স্থায়ীভাবে স্থগিত করা হয়েছে।"}
+            </p>
+          </div>
+        </div>
+
+        <div className="w-full space-y-3 pt-4">
+          <button
+            onClick={() => {
+              dbService.logout();
+              window.location.reload();
+            }}
+            className="w-full h-12 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl transition-all shadow-sm shadow-rose-600/10 flex items-center justify-center gap-2"
+          >
+            🚪 লগ আউট করুন (Log Out)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen ${isDark ? 'dark' : ''} max-w-md mx-auto relative flex flex-col font-sans mb-env`}>
       <InternetGuard isOnline={isOnline} />

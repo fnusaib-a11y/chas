@@ -35,11 +35,11 @@ const WalletHome = ({ state }: { state: AppState }) => {
             <div className="flex justify-between items-end">
                <div>
                   <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-1">Total Balance</p>
-                  <h3 className="text-4xl font-black text-[#37474F]">৳{user.balance.toFixed(0)}</h3>
+                  <h3 className="text-4xl font-black text-[#37474F]">{user.balance.toFixed(0)} <span className="text-lg font-bold">Coins</span></h3>
                </div>
                <div className="text-right">
                   <p className="text-[10px] font-black uppercase text-[#FFC107] tracking-widest mb-1">Pending</p>
-                  <h4 className="text-xl font-black text-[#FFC107]">৳{user.pendingBalance.toFixed(2)}</h4>
+                  <h4 className="text-xl font-black text-[#FFC107]">{user.pendingBalance.toFixed(0)} <span className="text-xs font-bold">Coins</span></h4>
                </div>
             </div>
          </Card>
@@ -53,7 +53,7 @@ const WalletHome = ({ state }: { state: AppState }) => {
                </div>
                <div>
                  <h4 className="text-[11px] font-black text-amber-800 uppercase tracking-tight">KYC সম্পন্ন হয়নি</h4>
-                 <p className="text-[9px] font-bold text-amber-700/80 uppercase">টাকা তুলতে KYC সম্পন্ন করুন</p>
+                 <p className="text-[9px] font-bold text-amber-700/80 uppercase">উইথড্র করতে KYC সম্পন্ন করুন</p>
                </div>
              </div>
              <Button onClick={() => navigate('/withdraw')} className="px-3.5 py-2 text-[10px] font-black uppercase rounded-lg bg-amber-500 text-white h-auto border-none shadow-md">শুরু করুন</Button>
@@ -137,11 +137,11 @@ const Withdraw = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
     const minVal = state.settings.minWithdrawal || 50;
     const val = parseFloat(amount);
     if (!val || val < minVal) {
-      alert(`Minimum withdrawal is ৳${minVal}`);
+      alert(`নূন্যতম উইথড্র পরিমাণ হচ্ছে ${minVal} কয়েন`);
       return;
     }
     if (val > (state.currentUser?.balance || 0)) {
-      alert('Insufficient balance');
+      alert('আপনার পর্যাপ্ত ব্যালেন্স নেই!');
       return;
     }
 
@@ -716,58 +716,97 @@ const Withdraw = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
     );
   }
 
+  const isWithdrawalEnabled = state.settings.withdrawalsEnabled !== false;
+
   return (
     <div className="min-h-screen bg-[#F5F5F5]">
        <div className="p-6 flex items-center gap-4 bg-white shadow-sm rounded-b-[32px]">
         <button onClick={() => navigate('/wallet')} className="p-3 bg-gray-50 rounded-2xl transition-transform active:scale-95"><ArrowLeft size={20} /></button>
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-4">Cashout Request</span>
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-4">Withdraw Coins</span>
       </div>
 
-      <div className="p-6 space-y-10">
-         <Card className="bg-[#37474F] p-8 rounded-[40px] shadow-2xl relative overflow-hidden">
-            <div className="relative z-10 text-center space-y-1">
-               <h1 className="text-5xl font-black text-[#FFC107]">৳{state.currentUser?.balance.toFixed(0)}</h1>
-               <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em]">Available Fund</p>
+      <div className="p-6 space-y-8">
+         <Card className="bg-[#37474F] p-8 rounded-[40px] shadow-2xl relative overflow-hidden text-center">
+            <div className="relative z-10 space-y-1">
+               <h1 className="text-5xl font-black text-[#FFC107]">{state.currentUser?.balance.toFixed(0)}</h1>
+               <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em]">Available Coins Balance</p>
             </div>
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-3xl" />
          </Card>
 
-         <div className="space-y-6">
-            <Input label="Payout Amount" placeholder={`Enter amount (min ৳${state.settings.minWithdrawal || 50})`} value={amount} onChange={setAmount} type="number" icon={Wallet} />
-            
-            <div className="space-y-3">
-               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Gateway</label>
-               <div className="grid grid-cols-3 gap-3">
-                  {['bKash', 'Nagad', 'Bank'].map(m => (
-                     <button
-                        key={m}
-                        onClick={() => setMethod(m)}
-                        className={`p-4 rounded-3xl border-2 font-black text-[10px] uppercase transition-all shadow-sm ${
-                           method === m ? 'border-[#FFC107] bg-[#FFC107] text-[#37474F]' : 'border-white bg-white text-gray-400'
-                        }`}
-                     >
-                        {m}
-                     </button>
-                  ))}
+         {!isWithdrawalEnabled ? (
+           <Card className="p-6 bg-red-50 border-2 border-red-200 rounded-[32px] shadow-xl text-center space-y-6">
+             <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 mx-auto">
+               <Lock size={32} />
+             </div>
+             <div className="space-y-2">
+               <h3 className="text-lg font-black text-red-800 uppercase tracking-tight">উইথড্র সাময়িকভাবে বন্ধ আছে</h3>
+               <p className="text-xs font-bold text-red-700/80 uppercase">Withdrawal Temporarily Suspended</p>
+             </div>
+             
+             {state.settings.withdrawalsDisabledReason && (
+               <div className="bg-white p-4 rounded-2xl border border-red-100 text-left">
+                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">কারণ / Reason:</p>
+                 <p className="text-xs font-bold text-gray-700 leading-relaxed">{state.settings.withdrawalsDisabledReason}</p>
                </div>
-            </div>
+             )}
 
-            <Input label={`${method} Account Details`} placeholder={method === 'Bank' ? 'A/C No, Branch, Routing' : '01XXXXXXXXX'} value={account} onChange={setAccount} icon={method === 'Bank' ? Landmark : PhoneOutgoing} />
-         </div>
+             {state.settings.withdrawalsReopenDate && (
+               <div className="bg-amber-50 p-4 rounded-2xl border border-amber-200 text-left flex gap-3 items-center">
+                 <div className="w-8 h-8 bg-amber-100 text-amber-700 rounded-xl flex items-center justify-center shrink-0">
+                   <Calendar size={18} />
+                 </div>
+                 <div>
+                   <p className="text-[9px] font-black text-amber-800 uppercase tracking-widest leading-none mb-1">লিস্টিং / পুনরায় খোলার তারিখ:</p>
+                   <p className="text-xs font-black text-amber-900">{state.settings.withdrawalsReopenDate}</p>
+                 </div>
+               </div>
+             )}
 
-         <div className="bg-[#FFC107]/10 p-6 rounded-[32px] border border-[#FFC107]/20 flex gap-4">
-            <div className="w-10 h-10 bg-[#FFC107] rounded-xl flex items-center justify-center text-[#37474F] shrink-0">
-               <Clock size={20} />
-            </div>
-            <div>
-               <h5 className="text-[#37474F] font-black text-xs uppercase tracking-tight">Express Processing</h5>
-               <p className="text-[10px] font-bold text-[#37474F]/60 leading-relaxed mt-1">
-                  Requests are typically verified and completed within 2-4 hours. Thank you for your patience.
-               </p>
-            </div>
-         </div>
+             <p className="text-[9px] font-bold text-gray-400 uppercase leading-relaxed pt-2">
+               যেকোনো আপডেটের জন্য আমাদের অফিশিয়াল চ্যানেলে যুক্ত থাকুন। ধন্যবাদ।
+             </p>
+           </Card>
+         ) : (
+           <>
+             <div className="space-y-6">
+                <Input label="Withdraw Amount (Coins)" placeholder={`Enter amount (min ${state.settings.minWithdrawal || 50} coins)`} value={amount} onChange={setAmount} type="number" icon={Wallet} />
+                
+                <div className="space-y-3">
+                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Select Gateway</label>
+                   <div className="grid grid-cols-3 gap-3">
+                      {['bKash', 'Nagad', 'Bank'].map(m => (
+                         <button
+                            key={m}
+                            onClick={() => setMethod(m)}
+                            className={`p-4 rounded-3xl border-2 font-black text-[10px] uppercase transition-all shadow-sm ${
+                               method === m ? 'border-[#FFC107] bg-[#FFC107] text-[#37474F]' : 'border-white bg-white text-gray-400'
+                            }`}
+                         >
+                            {m}
+                         </button>
+                      ))}
+                   </div>
+                </div>
 
-         <Button onClick={handleWithdraw} isLoading={loading} className="w-full h-16 rounded-[24px]">Request Payout</Button>
+                <Input label={`${method} Account Details`} placeholder={method === 'Bank' ? 'A/C No, Branch, Routing' : '01XXXXXXXXX'} value={account} onChange={setAccount} icon={method === 'Bank' ? Landmark : PhoneOutgoing} />
+             </div>
+
+             <div className="bg-[#FFC107]/10 p-6 rounded-[32px] border border-[#FFC107]/20 flex gap-4">
+                <div className="w-10 h-10 bg-[#FFC107] rounded-xl flex items-center justify-center text-[#37474F] shrink-0">
+                   <Clock size={20} />
+                </div>
+                <div>
+                   <h5 className="text-[#37474F] font-black text-xs uppercase tracking-tight">Express Processing</h5>
+                   <p className="text-[10px] font-bold text-[#37474F]/60 leading-relaxed mt-1">
+                      Requests are typically verified and completed within 2-4 hours. Thank you for your patience.
+                   </p>
+                </div>
+             </div>
+
+             <Button onClick={handleWithdraw} isLoading={loading} className="w-full h-16 rounded-[24px]">Request Payout</Button>
+           </>
+         )}
       </div>
     </div>
   );
@@ -795,12 +834,13 @@ const Recharge = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
       return;
     }
     const val = parseFloat(amount);
-    if (!val || val < 10) {
-      alert('Minimum recharge is ৳10');
+    const minCoins = (state.settings.coinRate || 100) * 10;
+    if (!val || val < minCoins) {
+      alert(`নূন্যতম রিচার্জ হচ্ছে ${minCoins} কয়েন`);
       return;
     }
     if (val > (state.currentUser?.balance || 0)) {
-      alert('Insufficient balance');
+      alert('আপনার পর্যাপ্ত ব্যালেন্স নেই!');
       return;
     }
 
@@ -809,10 +849,10 @@ const Recharge = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
       const success = await dbService.recharge(state.currentUser!.id, number, operator, val, type);
       if (success) {
         onUpdate();
-        alert(`Recharge of ৳${val} to ${number} is being processed! Check history for cashback.`);
+        alert(`রিচার্জ সফল হয়েছে! ${val} কয়েন রিচার্জ প্রক্রিয়াধীন রয়েছে।`);
         navigate('/wallet');
       } else {
-        alert('Recharge failed. Please try again.');
+        alert('রিচার্জ ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
       }
     } catch (err) {
       console.error(err);
@@ -837,11 +877,11 @@ const Recharge = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
             <div className="w-16 h-16 bg-[#FFC107] rounded-3xl flex items-center justify-center text-[#37474F] text-3xl shadow-[0_10px_40px_rgba(255,193,7,0.2)] mb-2">
                ⚡
             </div>
-            <h2 className="text-5xl font-black text-[#FFC107] drop-shadow-md tracking-tighter">৳{state.currentUser?.balance.toFixed(0)}</h2>
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/50">Current Balance</p>
+            <h2 className="text-5xl font-black text-[#FFC107] drop-shadow-md tracking-tighter">{state.currentUser?.balance.toFixed(0)}</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/50">Current Coins Balance</p>
           </div>
           <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-[#FFC107]/10 rounded-full blur-3xl opacity-50" />
-        </Card>
+         </Card>
 
         <div className="space-y-8">
           <div className="space-y-4">
@@ -885,10 +925,10 @@ const Recharge = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
 
           <div className="space-y-4">
             <Input label="Mobile Number" placeholder="01XXXXXXXXX" value={number} onChange={setNumber} type="tel" icon={PhoneOutgoing} className="rounded-[32px] p-6 h-18 text-sm" />
-            <Input label="Recharge Amount (৳)" placeholder="Min ৳10" value={amount} onChange={setAmount} type="number" icon={Wallet} className="rounded-[32px] p-6 h-18 text-sm" />
+            <Input label="Recharge Amount (Coins)" placeholder={`Min ${(state.settings.coinRate || 100) * 10} Coins`} value={amount} onChange={setAmount} type="number" icon={Wallet} className="rounded-[32px] p-6 h-18 text-sm" />
           </div>
           
-          {parseFloat(amount) >= 50 ? (
+          {parseFloat(amount) >= (state.settings.coinRate || 100) * 50 ? (
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -899,7 +939,7 @@ const Recharge = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
               </div>
               <div>
                 <p className="text-xs font-black text-white uppercase tracking-tight">Bonus Unlocked!</p>
-                <p className="text-[10px] font-bold text-white/80 uppercase">You'll receive ৳10 cashback after successful recharge</p>
+                <p className="text-[10px] font-bold text-white/80 uppercase">You'll receive {(state.settings.coinRate || 100) * 10} Coins cashback after successful recharge</p>
               </div>
             </motion.div>
           ) : (
@@ -908,7 +948,7 @@ const Recharge = ({ state, onUpdate }: { state: AppState; onUpdate: () => void }
                 🎁
               </div>
               <p className="text-[9px] font-black text-[#37474F]/40 uppercase leading-tight">
-                 Recharge <span className="text-[#37474F]">৳50</span> or more to unlock your INSTANT CASHBACK gift!
+                 Recharge {(state.settings.coinRate || 100) * 50} or more Coins to unlock your INSTANT CASHBACK gift!
               </p>
             </div>
           )}

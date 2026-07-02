@@ -251,6 +251,10 @@ export const dbService = {
       monetagBannerZoneId: '',
       monetagInterstitialZoneId: '',
       monetagInAppZoneId: '',
+      withdrawalsEnabled: true,
+      withdrawalsDisabledReason: '',
+      withdrawalsReopenDate: '',
+      coinRate: 100,
       hubs: defaultHubs,
       earningChannels: defaultEarningChannels,
       coinTabs: defaultCoinTabs

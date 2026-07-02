@@ -156,6 +156,8 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
     category: "markets",
     baseCost: 1000,
     costMultiplier: 1.45,
+    baseProfit: 50,
+    profitMultiplier: 1.35,
     description: "",
     reqCardId: "",
     reqCardLevel: 1,
@@ -1318,10 +1320,94 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                   </button>
                 </div>
 
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                  <div>
+                    <h4 className="text-xs font-black text-gray-800 uppercase tracking-wide">
+                      Withdrawal Gateway Status
+                    </h4>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase">
+                      Enable or disable user withdrawals
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setLocalSettings({
+                        ...localSettings,
+                        withdrawalsEnabled: !(localSettings.withdrawalsEnabled ?? true),
+                      });
+                    }}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${localSettings.withdrawalsEnabled ?? true ? "bg-green-500" : "bg-red-500"}`}
+                  >
+                    <div
+                      className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${(localSettings.withdrawalsEnabled ?? true) ? "left-7" : "left-1"}`}
+                    />
+                  </button>
+                </div>
+
+                {!(localSettings.withdrawalsEnabled ?? true) && (
+                  <div className="space-y-4 p-4 border border-red-100 bg-red-50/30 rounded-2xl">
+                    <p className="text-[10px] font-black uppercase text-red-500 tracking-wider">Withdrawal Disabled Custom Info</p>
+                    
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest">
+                        Reason for Suspension (Bangla or English)
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="e.g. লিস্টিং ও গ্যাস ফি আপডেটের জন্য সাময়িকভাবে উইথড্র বন্ধ আছে।"
+                        value={localSettings.withdrawalsDisabledReason ?? ""}
+                        onChange={(val: string) => {
+                          setLocalSettings({
+                            ...localSettings,
+                            withdrawalsDisabledReason: val,
+                          });
+                        }}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest">
+                        Expected Reopen / Listing Date Info
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="e.g. ৩০শে জুলাই ২০২৬ অথবা লিস্টিং এর দিন"
+                        value={localSettings.withdrawalsReopenDate ?? ""}
+                        onChange={(val: string) => {
+                          setLocalSettings({
+                            ...localSettings,
+                            withdrawalsReopenDate: val,
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest">
-                      Min Withdrawal Amount (৳)
+                      Coin to Money Rate (How many Coins = 1 BDT/৳)
+                    </label>
+                    <Input
+                      type="number"
+                      placeholder="e.g. 100"
+                      value={localSettings.coinRate ?? 100}
+                      onChange={(val: string) => {
+                        setLocalSettings({
+                          ...localSettings,
+                          coinRate: parseFloat(val) || 100,
+                        });
+                      }}
+                    />
+                    <p className="text-[8px] text-gray-400 font-bold italic">
+                      For example: if set to 100, 100 coins equal ৳1.
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-gray-500 tracking-widest">
+                      Min Withdrawal Coins Requirement
                     </label>
                     <Input
                       type="number"
@@ -1333,6 +1419,9 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                         });
                       }}
                     />
+                    <p className="text-[8px] text-gray-400 font-bold italic">
+                      Minimum coins required to request cashout.
+                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -2122,7 +2211,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Card ID (Unique, lowercase)</label>
                     <Input
@@ -2165,7 +2254,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                   <div className="space-y-1">
                     <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Category</label>
                     <select
@@ -2195,6 +2284,25 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                       step="0.01"
                       value={newMiningCard.costMultiplier}
                       onChange={(val: string) => setNewMiningCard({ ...newMiningCard, costMultiplier: parseFloat(val) || 1.1 })}
+                      className="h-9 text-xs font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Base Profit (Hourly)</label>
+                    <Input
+                      type="number"
+                      value={newMiningCard.baseProfit}
+                      onChange={(val: string) => setNewMiningCard({ ...newMiningCard, baseProfit: parseInt(val) || 0 })}
+                      className="h-9 text-xs font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Profit Multiplier</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={newMiningCard.profitMultiplier}
+                      onChange={(val: string) => setNewMiningCard({ ...newMiningCard, profitMultiplier: parseFloat(val) || 1.1 })}
                       className="h-9 text-xs font-bold"
                     />
                   </div>
@@ -2332,7 +2440,7 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                         </button>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                         <div className="space-y-1">
                           <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Bangla Name</label>
                           <Input
@@ -2383,6 +2491,39 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                         </div>
 
                         <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Base Profit (Hourly)</label>
+                          <Input
+                            type="number"
+                            value={card.baseProfit !== undefined ? card.baseProfit : 50}
+                            onChange={(val: string) => {
+                              const currentCards = localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                                ? [...localSettings.miningCardsConfig]
+                                : JSON.parse(JSON.stringify(DEFAULT_MINING_CARDS));
+                              currentCards[idx].baseProfit = parseInt(val) || 0;
+                              setLocalSettings({ ...localSettings, miningCardsConfig: currentCards });
+                            }}
+                            className="h-9 text-xs font-bold"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Profit Multiplier</label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={card.profitMultiplier !== undefined ? card.profitMultiplier : 1.35}
+                            onChange={(val: string) => {
+                              const currentCards = localSettings.miningCardsConfig && localSettings.miningCardsConfig.length > 0
+                                ? [...localSettings.miningCardsConfig]
+                                : JSON.parse(JSON.stringify(DEFAULT_MINING_CARDS));
+                              currentCards[idx].profitMultiplier = parseFloat(val) || 1.1;
+                              setLocalSettings({ ...localSettings, miningCardsConfig: currentCards });
+                            }}
+                            className="h-9 text-xs font-bold"
+                          />
+                        </div>
+
+                        <div className="space-y-1 col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-1">
                           <label className="text-[10px] font-black text-slate-600 uppercase tracking-wider block">Description</label>
                           <Input
                             type="text"
@@ -3851,6 +3992,73 @@ export default function AdminDashboard({ state }: AdminDashboardProps) {
                     />
                   </button>
                 </div>
+
+                {/* Suspension / Ban Control */}
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                  <div>
+                    <h4 className="text-sm font-black text-rose-600">
+                      Suspend / Ban User (ইউজার ব্যান্ড/সাসপেন্ড)
+                    </h4>
+                  </div>
+                  <button
+                    onClick={() =>
+                      setTargetUser({
+                        ...targetUser,
+                        isSuspended: !targetUser.isSuspended,
+                      })
+                    }
+                    className={`w-12 h-6 rounded-full transition-colors relative ${targetUser.isSuspended ? "bg-red-600" : "bg-gray-200"}`}
+                  >
+                    <div
+                      className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${targetUser.isSuspended ? "left-7" : "left-1"}`}
+                    />
+                  </button>
+                </div>
+                {targetUser.isSuspended && (
+                  <Input
+                    label="Reason for Suspension / Ban (সাসপেন্ড করার কারণ)"
+                    placeholder="যেমন: নিয়ম ভঙ্গের কারণে সাময়িক ব্লক।"
+                    value={targetUser.suspensionReason || ""}
+                    onChange={(val: string) =>
+                      setTargetUser({ ...targetUser, suspensionReason: val })
+                    }
+                  />
+                )}
+
+                {/* Mining Level Control */}
+                <div className="p-4 bg-gray-50 rounded-2xl space-y-3">
+                  <div>
+                    <h4 className="text-sm font-black text-gray-900">
+                      Mining Level Configuration (মাইনিং লেভেল)
+                    </h4>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <div className="flex-1">
+                      <Input
+                        type="number"
+                        placeholder="Mining Level"
+                        value={targetUser.miningLevel !== undefined ? targetUser.miningLevel : 1}
+                        onChange={(val: string) =>
+                          setTargetUser({ ...targetUser, miningLevel: val === "" ? 0 : parseInt(val) })
+                        }
+                        className="h-10 text-xs font-bold"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setTargetUser({
+                          ...targetUser,
+                          miningLevel: 0,
+                        })
+                      }
+                      className="h-10 px-3 bg-red-100 hover:bg-red-200 text-red-700 font-extrabold text-[10px] rounded-xl flex items-center justify-center uppercase tracking-wider transition-colors"
+                    >
+                      Reset to 0
+                    </button>
+                  </div>
+                </div>
+
                 <Button
                   onClick={async () => {
                     if (editingItem) {

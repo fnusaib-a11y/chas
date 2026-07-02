@@ -48,6 +48,8 @@ export interface User {
   streak: number;
   groupName?: string;
   isAdmin?: boolean;
+  isSuspended?: boolean;
+  suspensionReason?: string;
   darkMode?: boolean;
   soundEnabled?: boolean;
   coverPhoto?: string;
@@ -256,6 +258,10 @@ export interface AppSettings {
   devDebugMode?: boolean;
   devBypassTaskTimer?: boolean;
   devMockAdsEnabled?: boolean;
+  withdrawalsEnabled?: boolean;
+  withdrawalsDisabledReason?: string;
+  withdrawalsReopenDate?: string;
+  coinRate?: number; // How many coins = 1 BDT (e.g. 100)
   hubs: {
     serviceHub: HubSettings;
     logisticsHub: HubSettings;
